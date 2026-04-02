@@ -74,6 +74,82 @@ def make_driver():
 SHOTS_DIR    = os.path.join(BASE_DIR, "debug_shots")
 COOKIES_PATH = "/tmp/fb_cookies.json"
 
+def is_login_page(driver):
+    """True se siamo sulla pagina di login (sessione scaduta)."""
+    url = driver.current_url
+    src = driver.page_source
+    return (
+        "login" in url or
+        "Log into Facebook" in src or
+        "Accedi a Facebook" in src or
+        'name="pass"' in src or
+        'id="pass"' in src
+    )
+
+def try_relogin(driver):
+    """Clicca sul profilo salvato e inserisce la password se la sessione è scaduta."""
+    password = os.environ.get("FB_PASSWORD", "")
+    if not password:
+        print("FB_PASSWORD non impostato, impossibile fare re-login.")
+        return False
+
+    print("Sessione scaduta — tento re-login automatico...")
+
+    # Prova a cliccare su un profilo salvato (qualsiasi)
+    try:
+        profile = WebDriverWait(driver, 6).until(
+            EC.element_to_be_clickable((By.XPATH,
+                "//div[contains(@class,'x1n2onr6') or contains(@class,'x9f619')]"
+                "//a[contains(@href,'login') or contains(@href,'checkpoint')]"
+                " | //div[@role='button' and .//image]"
+            ))
+        )
+        profile.click()
+        print("Profilo cliccato.")
+        time.sleep(3)
+    except Exception:
+        # Fallback: cerca link con href che porta al profilo
+        try:
+            links = driver.find_elements(By.XPATH, "//a[contains(@href, 'login')]")
+            if links:
+                links[0].click()
+                time.sleep(3)
+        except Exception as e:
+            print(f"Impossibile cliccare profilo: {e}")
+
+    shot(driver, "02_after_profile_click")
+
+    # Cerca il campo password
+    try:
+        pwd = WebDriverWait(driver, 8).until(
+            EC.presence_of_element_located((By.XPATH,
+                "//input[@type='password' or @name='pass' or @id='pass']"
+            ))
+        )
+        pwd.clear()
+        pwd.send_keys(password)
+        time.sleep(1)
+        shot(driver, "03_password_entered")
+
+        # Submit
+        try:
+            btn = driver.find_element(By.XPATH,
+                "//button[@type='submit' or contains(@data-testid,'royal_login_button')]"
+            )
+            btn.click()
+        except Exception:
+            pwd.submit()
+
+        time.sleep(6)
+        shot(driver, "04_after_login")
+        print(f"Re-login eseguito. Titolo: {driver.title}")
+        return True
+
+    except Exception as e:
+        print(f"Re-login fallito: {e}")
+        shot(driver, "02_relogin_failed")
+        return False
+
 def load_cookies(driver):
     if not os.path.exists(COOKIES_PATH):
         print("Nessun cookie trovato, procedo senza login.")
@@ -82,7 +158,6 @@ def load_cookies(driver):
     driver.get("https://www.facebook.com")
     time.sleep(3)
     for c in cookies:
-        # Selenium accetta solo alcuni campi
         cookie = {k: c[k] for k in ("name", "value", "domain", "path", "secure") if k in c}
         if "expirationDate" in c:
             cookie["expiry"] = int(c["expirationDate"])
@@ -94,6 +169,10 @@ def load_cookies(driver):
     time.sleep(4)
     shot(driver, "01_after_cookies")
     print(f"Cookie caricati. Titolo: {driver.title}")
+
+    # Se la sessione è scaduta, tenta re-login automatico
+    if is_login_page(driver):
+        try_relogin(driver)
 
 def shot(driver, name):
     os.makedirs(SHOTS_DIR, exist_ok=True)
