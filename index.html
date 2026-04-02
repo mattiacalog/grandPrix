@@ -66,48 +66,92 @@
 
 <!-- HERO STRIP -->
 <div class="hero-strip">
-    <div class="hero-inner">
-        <!-- icon + name -->
-        <div class="hero-left">
-            <div style="position:relative;flex-shrink:0;width:50px;height:50px;border-radius:50%;border:2px solid #E8002D;box-shadow:0 0 14px rgba(232,0,45,.5);background:url('icons/achivieneaprenderlo.jpg') center/cover no-repeat #161616;">
-                <span style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);font-size:.9rem;line-height:1;" aria-hidden="true">👑</span>
+
+    <!-- RIGA 1: icon + nome + posizione + iscritti -->
+    <div class="hero-row hero-row-1">
+        <div class="hero-identity">
+            <div class="hero-avatar">
+                <img src="icons/achivieneaprenderlo.jpg" alt="Il nostro gruppo">
+                <span class="hero-crown" aria-hidden="true">👑</span>
             </div>
-            <div style="display:flex;flex-direction:column;">
+            <div class="hero-name-block">
                 <span class="hero-tag">Il nostro gruppo</span>
-                <span class="hero-name">A chi viene a prenderlo, lo regalo</span>
+                <span class="hero-name">A chi viene a prenderlo</span>
             </div>
         </div>
-
-        <!-- pills -->
-        <div class="hero-pills">
-            <div class="hpill"><div class="hpill-lbl">Posizione</div><div id="hero-rank"   class="hpill-val">—</div></div>
-            <div class="hpill"><div class="hpill-lbl">Iscritti</div> <div id="hero-total"  class="hpill-val">—</div></div>
-            <div class="hpill"><div class="hpill-lbl">+Ieri</div>    <div id="hero-24h"    class="hpill-val positive">—</div></div>
-            <div class="hpill"><div class="hpill-lbl">+7 giorni</div><div id="hero-7d"     class="hpill-val positive">—</div></div>
-            <div class="hpill">
-                <div class="hpill-lbl">Trend rank
-                    <select id="hero-trend-period" class="hpill-sel" aria-label="Periodo trend rank">
-                        <option value="7">7g</option>
-                        <option value="30">1m</option>
-                        <option value="90">3m</option>
-                        <option value="365">1a</option>
-                    </select>
-                </div>
-                <div id="hero-trend-rank" class="hpill-val">—</div>
+        <div class="hero-row-1-pills">
+            <div class="hpill hpill-accent">
+                <div class="hpill-lbl">Posizione</div>
+                <div id="hero-rank" class="hpill-val">—</div>
             </div>
             <div class="hpill">
-                <div class="hpill-lbl">Sorpassi
-                    <select id="hero-overtakes-period" class="hpill-sel" aria-label="Periodo sorpassi">
-                        <option value="7">7g</option>
-                        <option value="30">1m</option>
-                        <option value="90">3m</option>
-                        <option value="365">1a</option>
-                    </select>
-                </div>
-                <div id="hero-overtakes" class="hpill-val">—</div>
+                <div class="hpill-lbl">Iscritti</div>
+                <div id="hero-total" class="hpill-val">—</div>
             </div>
         </div>
     </div>
+
+    <!-- RIGA 2: crescita per periodo -->
+    <div class="hero-row hero-row-2">
+        <div class="hpill hpill-grow">
+            <div class="hpill-lbl">Oggi</div>
+            <div id="hero-24h" class="hpill-val positive">—</div>
+        </div>
+        <div class="hpill hpill-grow">
+            <div class="hpill-lbl">7 giorni</div>
+            <div id="hero-7d" class="hpill-val positive">—</div>
+        </div>
+        <div class="hpill hpill-grow">
+            <div class="hpill-lbl">30 giorni</div>
+            <div id="hero-30d" class="hpill-val positive">—</div>
+        </div>
+        <div class="hpill hpill-grow">
+            <div class="hpill-lbl">Anno</div>
+            <div id="hero-365d" class="hpill-val positive">—</div>
+        </div>
+    </div>
+
+    <!-- RIGA 3: trend + sorpassi + media -->
+    <div class="hero-row hero-row-3">
+        <div class="hpill hpill-ctrl">
+            <div class="hpill-lbl">
+                Trend rank
+                <select id="hero-trend-period" class="hpill-sel" aria-label="Periodo trend rank">
+                    <option value="7">7g</option>
+                    <option value="30">1m</option>
+                    <option value="90">3m</option>
+                    <option value="365">1a</option>
+                </select>
+            </div>
+            <div id="hero-trend-rank" class="hpill-val">—</div>
+        </div>
+        <div class="hpill hpill-ctrl">
+            <div class="hpill-lbl">
+                Sorpassi
+                <select id="hero-overtakes-period" class="hpill-sel" aria-label="Periodo sorpassi">
+                    <option value="7">7g</option>
+                    <option value="30">1m</option>
+                    <option value="90">3m</option>
+                    <option value="365">1a</option>
+                </select>
+            </div>
+            <div id="hero-overtakes" class="hpill-val">—</div>
+        </div>
+        <div class="hpill hpill-ctrl">
+            <div class="hpill-lbl">
+                Media/g
+                <select id="hero-avg-period" class="hpill-sel" aria-label="Periodo media">
+                    <option value="7">7g</option>
+                    <option value="30">1m</option>
+                    <option value="90">3m</option>
+                    <option value="365">1a</option>
+                </select>
+            </div>
+            <div id="hero-avg" class="hpill-val">—</div>
+        </div>
+    </div>
+
+    <!-- RIGA 4: CTA -->
     <div class="hero-cta-row">
         <button id="open-stats" class="stats-open-btn" aria-label="Apri statistiche complete">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>

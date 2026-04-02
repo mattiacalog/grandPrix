@@ -128,10 +128,12 @@ function countOvertakes(groupId, from, to) {
 // ─── HERO STRIP ──────────────────────────────────────────────────────────────
 
 function renderHeroStats() {
-    const to     = latestSnap();
-    const from1  = getSnapshotBefore(1);
-    const from7  = getSnapshotBefore(7);
-    const ranks  = getRankAt(to);
+    const to      = latestSnap();
+    const from1   = getSnapshotBefore(1);
+    const from7   = getSnapshotBefore(7);
+    const from30  = getSnapshotBefore(30);
+    const from365 = getSnapshotBefore(365);
+    const ranks   = getRankAt(to);
     const ourRank = ranks[OUR_ID];
 
     // Trend rank
@@ -147,21 +149,32 @@ function renderHeroStats() {
     const fromOT = getSnapshotBefore(overtakeDays);
     const overtakes = countOvertakes(OUR_ID, fromOT, to);
 
-    const delta1 = absGrowth(OUR_ID, from1, to);
-    const delta7 = absGrowth(OUR_ID, from7, to);
+    // Media giornaliera
+    const avgDays = +document.getElementById('hero-avg-period').value;
+    const fromAvg = getSnapshotBefore(avgDays);
+    const avgGrowth = fromAvg ? (absGrowth(OUR_ID, fromAvg, to) / daysBetween(fromAvg, to)).toFixed(1) : null;
 
-    document.getElementById('hero-rank').textContent    = `#${ourRank}`;
-    document.getElementById('hero-total').textContent   = fmt(to.data[OUR_ID] || 0);
-    document.getElementById('hero-trend-rank').textContent = `#${trendRank}`;
-    document.getElementById('hero-overtakes').textContent  = overtakes;
+    const delta1   = absGrowth(OUR_ID, from1, to);
+    const delta7   = absGrowth(OUR_ID, from7, to);
+    const delta30  = absGrowth(OUR_ID, from30, to);
+    const delta365 = absGrowth(OUR_ID, from365, to);
 
-    const el24h = document.getElementById('hero-24h');
-    el24h.textContent = fmtSign(delta1);
-    el24h.style.color = delta1 === null ? '#fff' : delta1 >= 0 ? '#34d399' : '#ef4444';
+    document.getElementById('hero-rank').textContent        = `#${ourRank}`;
+    document.getElementById('hero-total').textContent       = fmt(to.data[OUR_ID] || 0);
+    document.getElementById('hero-trend-rank').textContent  = `#${trendRank}`;
+    document.getElementById('hero-overtakes').textContent   = overtakes;
+    document.getElementById('hero-avg').textContent         = avgGrowth !== null ? `+${avgGrowth}/g` : '—';
 
-    const el7d = document.getElementById('hero-7d');
-    el7d.textContent = fmtSign(delta7);
-    el7d.style.color = delta7 === null ? '#fff' : delta7 >= 0 ? '#34d399' : '#ef4444';
+    function setGrowth(id, val) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = fmtSign(val);
+        el.style.color = val === null ? '#fff' : val >= 0 ? '#34d399' : '#ef4444';
+    }
+    setGrowth('hero-24h',   delta1);
+    setGrowth('hero-7d',    delta7);
+    setGrowth('hero-30d',   delta30);
+    setGrowth('hero-365d',  delta365);
 }
 
 // ─── MODAL ───────────────────────────────────────────────────────────────────
@@ -800,6 +813,7 @@ async function init() {
 
     document.getElementById('hero-trend-period').addEventListener('change', renderHeroStats);
     document.getElementById('hero-overtakes-period').addEventListener('change', renderHeroStats);
+    document.getElementById('hero-avg-period').addEventListener('change', renderHeroStats);
 
     document.getElementById('gap-toggle').addEventListener('click', function() {
         gapMode = gapMode === 'interval' ? 'leader' : 'interval';
