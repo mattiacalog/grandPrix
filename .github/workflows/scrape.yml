@@ -26,7 +26,7 @@ jobs:
         uses: browser-actions/setup-chrome@v1
 
       - name: Run scraper
-        run: python scraper_gha.py
+        run: python -u scraper_gha.py
 
       - name: Upload debug screenshot
         if: always()
@@ -42,4 +42,5 @@ jobs:
           git config user.email "bot@grandprix.local"
           git add data/data.json
           git diff --staged --quiet || git commit -m "data: snapshot $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git pull --rebase
           git push
