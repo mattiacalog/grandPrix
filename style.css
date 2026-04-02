@@ -460,7 +460,7 @@ body {
 .race-header-row {
     display: flex;
     justify-content: flex-end;
-    padding-right: 44px;
+    padding-right: 0;
     margin-bottom: 8px;
     position: relative;
     z-index: 2;
@@ -557,10 +557,26 @@ body.is-playing .speed-lines {
     border: 1px solid rgba(255,255,255,.06);
     color: var(--text-muted);
 }
-.bar-rank.top3 {
+.bar-rank.p1 {
     background: var(--gold);
     color: #000;
     border-color: var(--gold);
+    box-shadow: 0 0 8px rgba(255,214,10,.7);
+    animation: rank-gold-pulse 2s ease-in-out infinite;
+}
+.bar-rank.p2 {
+    background: #C0C0C0;
+    color: #000;
+    border-color: #C0C0C0;
+    box-shadow: 0 0 8px rgba(192,192,192,.5);
+    animation: rank-silver-pulse 2s ease-in-out infinite;
+}
+.bar-rank.p3 {
+    background: #CD7F32;
+    color: #000;
+    border-color: #CD7F32;
+    box-shadow: 0 0 8px rgba(205,127,50,.5);
+    animation: rank-bronze-pulse 2s ease-in-out infinite;
 }
 .bar-rank.our {
     background: var(--accent);
@@ -1119,8 +1135,9 @@ select:focus-visible {
     .bar-name-wrap { width: 68px; }
     .bar-name { font-size: .64rem; }
     .bar-icon { width: 27px; height: 27px; }
-    .bar-count { font-size: .64rem; }
-    .bar-gap-lbl { display: none; }
+    .bar-count { font-size: .58rem; }
+    .bar-count-wrap { width: 64px; gap: 3px; justify-content: center; }
+    .bar-gap-lbl { display: block; font-size: .44rem; }
     .bar-day-delta { display: none; }
     .hero-pills { gap: 5px; }
     .hpill { min-width: 58px; padding: 6px 8px; }
@@ -1130,7 +1147,8 @@ select:focus-visible {
     .modal { max-height: 92vh; height: 88vh; border-radius: 6px 6px 0 0; }
     .chart-wrapper { height: 500px; min-height: 500px; }
     .chart-controls { flex-direction: column; align-items: flex-start; }
-    .chart-tab { min-height: 40px; padding: 6px 12px; font-size: .72rem; }
+    .chart-tab { min-height: 36px; padding: 4px 6px; font-size: .62rem; flex: 1; }
+    .tab-group { gap: 4px; flex-wrap: nowrap; width: 100%; }
     .period-tab { min-height: 40px; padding: 6px 12px; font-size: .72rem; }
     .play-btn { width: 44px; height: 44px; }
     #ticker-bar { bottom: 62px; height: 22px; }
@@ -1229,14 +1247,17 @@ body.is-playing .bar-fill::before {
     to   { transform: translateX(240%); }
 }
 
-/* Bar rank: glow on top3 */
-.bar-rank.top3 {
-    box-shadow: 0 0 8px rgba(255,214,10,.6);
-    animation: rank-gold-pulse 2s ease-in-out infinite;
-}
 @keyframes rank-gold-pulse {
     0%,100% { box-shadow: 0 0 6px rgba(255,214,10,.5); }
     50%      { box-shadow: 0 0 14px rgba(255,214,10,.9), 0 0 24px rgba(255,214,10,.3); }
+}
+@keyframes rank-silver-pulse {
+    0%,100% { box-shadow: 0 0 6px rgba(192,192,192,.4); }
+    50%      { box-shadow: 0 0 14px rgba(192,192,192,.8), 0 0 24px rgba(192,192,192,.25); }
+}
+@keyframes rank-bronze-pulse {
+    0%,100% { box-shadow: 0 0 6px rgba(205,127,50,.4); }
+    50%      { box-shadow: 0 0 14px rgba(205,127,50,.8), 0 0 24px rgba(205,127,50,.25); }
 }
 
 /* Section title: accent bar glow */
