@@ -26,7 +26,9 @@ jobs:
         uses: browser-actions/setup-chrome@v1
 
       - name: Write Facebook cookies
-        run: echo '${{ secrets.FB_COOKIES }}' > /tmp/fb_cookies.json
+        env:
+          FB_COOKIES: ${{ secrets.FB_COOKIES }}
+        run: echo "$FB_COOKIES" > /tmp/fb_cookies.json
 
       - name: Run scraper
         run: python -u scraper_gha.py
