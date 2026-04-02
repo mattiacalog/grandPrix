@@ -8,6 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
 import time, re, json, os, datetime
 
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
@@ -155,14 +156,14 @@ def try_relogin(driver):
         time.sleep(1)
         shot(driver, "03_password_entered")
 
-        # Submit
+        # Submit — prova bottone, fallback su Enter
         try:
             btn = driver.find_element(By.XPATH,
                 "//button[@type='submit' or contains(@data-testid,'royal_login_button')]"
             )
             btn.click()
         except Exception:
-            pwd.submit()
+            pwd.send_keys(Keys.RETURN)
 
         time.sleep(6)
         shot(driver, "04_after_login")
