@@ -386,7 +386,8 @@ function render(index) {
 
         const rankEl = document.getElementById(`rank-${g.id}`);
         rankEl.textContent = rank + 1;
-        rankEl.className = `bar-rank${rank < 3 ? ' top3' : ''}${g.id === OUR_ID ? ' our' : ''}`;
+        const podioClass = rank === 0 ? ' p1' : rank === 1 ? ' p2' : rank === 2 ? ' p3' : '';
+        rankEl.className = `bar-rank${podioClass}${g.id === OUR_ID ? ' our' : ''}`;
 
         const deltaEl = document.getElementById(`daydelta-${g.id}`);
         if (delta !== null) {
@@ -407,7 +408,7 @@ function render(index) {
         }
     });
 
-    document.getElementById('current-date').textContent = fmtDate(snap.date);
+    document.getElementById('current-date').textContent = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
     document.getElementById('timeline').value = index;
     updateChartLine(index);
     updateTicker(snap, sorted, counts, index);
@@ -783,7 +784,7 @@ async function init() {
     slider.max   = snapshots.length - 1;
 
     document.getElementById('date-start').textContent = fmtDate(snapshots[0].date);
-    document.getElementById('date-end').textContent   = fmtDate(snapshots[snapshots.length - 1].date);
+    document.getElementById('date-end').textContent   = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
 
     slider.addEventListener('input', () => { current = +slider.value; render(current); });
     document.getElementById('play-btn').addEventListener('click', togglePlay);

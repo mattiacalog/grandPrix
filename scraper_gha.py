@@ -152,7 +152,7 @@ def scrape():
     today   = datetime.date.today().strftime("%Y-%m-%d")
     results = {}
 
-    for g in GROUPS[:1]:  # TODO: rimuovere [:1] dopo il debug
+    for g in GROUPS:
         gid, gurl = g["id"], g["url"]
         print(f"  -> {gid}")
         try:
