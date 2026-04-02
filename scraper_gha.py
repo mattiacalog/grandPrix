@@ -56,13 +56,22 @@ def make_driver():
     opts.add_argument("--disable-dev-shm-usage")
     opts.add_argument("--disable-blink-features=AutomationControlled")
     opts.add_argument("--window-size=1280,900")
-    opts.add_argument("user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
+    opts.add_argument("--disable-gpu")
+    opts.add_argument("--disable-extensions")
+    opts.add_argument("--disable-infobars")
+    opts.add_argument("--lang=it-IT")
+    opts.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
     opts.add_experimental_option("excludeSwitches", ["enable-automation"])
-    return webdriver.Chrome(options=opts)
+    opts.add_experimental_option("useAutomationExtension", False)
+    driver = webdriver.Chrome(options=opts)
+    driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+        "source": "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+    })
+    return driver
 
 def accept_cookies(driver):
     driver.get("https://www.facebook.com")
-    time.sleep(5)
+    time.sleep(8)
 
     # Salva screenshot per debug
     try:
@@ -102,14 +111,8 @@ def accept_cookies(driver):
 
     print("Nessun banner cookie trovato, procedo.")
     print(f"Titolo pagina: {driver.title}")
-    # Stampa tutti i bottoni visibili per capire cosa c'è sulla pagina
-    try:
-        buttons = driver.find_elements(By.TAG_NAME, "button")
-        print(f"Bottoni trovati: {len(buttons)}")
-        for b in buttons[:10]:
-            print(f"  button: '{b.text.strip()[:80]}'")
-    except Exception as e:
-        print(f"Errore listing bottoni: {e}")
+    print(f"URL corrente: {driver.current_url}")
+    print(f"HTML (primi 3000 char):\n{driver.page_source[:3000]}")
 
 def scrape():
     print(f"\n[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}] Avvio scraping...")
