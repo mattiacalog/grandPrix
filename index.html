@@ -12,7 +12,9 @@
 <body>
 
 <!-- AUDIO -->
-<audio id="theme-audio" src="audio/theme.mp3" preload="auto" loop="false"></audio>
+<audio id="theme-audio"    src="audio/theme.mp3"    preload="auto" loop="false" muted></audio>
+<audio id="intro-audio"    src="audio/intro.mp3"    preload="auto"></audio>
+<audio id="overtake-audio" src="audio/overtake.mp3" preload="auto"></audio>
 
 <!-- INTRO SCREEN -->
 <div id="intro-screen" role="presentation" aria-hidden="true">
@@ -329,7 +331,9 @@
                  8.166,8.610,9.001,9.420,9.789,10.172,10.581,10.977,11.393,
                  11.820,12.213,12.614,13.031,13.422,13.804,14.184];
 
-    var audio    = document.getElementById('theme-audio');
+    var audio        = document.getElementById('intro-audio');    // drives animation timing
+    var themeAudio   = document.getElementById('theme-audio');    // background music (muted by default)
+    var overtakeAudio= document.getElementById('overtake-audio'); // overtake fanfare
     var intro    = document.getElementById('intro-screen');
     var tapHint  = document.getElementById('intro-tap-hint');
     var audioBtn = document.getElementById('audio-btn');
@@ -341,29 +345,39 @@
     var SVG_ON   = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>';
     var SVG_MUTE = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>';
 
-    // ── AUDIO BUTTON ──────────────────────────────────────────────────────────
+    // ── AUDIO BUTTON — controlla theme (musica di sottofondo) ─────────────────
     function syncAudioBtn() {
-        var muted = audio.muted;
+        var muted = themeAudio.muted;
         if (audioBtn)  audioBtn.classList.toggle('muted', muted);
         if (audioIcon) audioIcon.innerHTML = muted ? SVG_MUTE : SVG_ON;
         if (audioBtn)  audioBtn.setAttribute('aria-label', muted ? 'Attiva audio' : 'Disattiva audio');
     }
     if (audioBtn) {
         audioBtn.addEventListener('click', function () {
-            audio.muted = !audio.muted;
-            // If was paused (very edge case), resume
-            if (!audio.muted && audio.paused) audio.play().catch(function(){});
+            themeAudio.muted = !themeAudio.muted;
+            if (!themeAudio.muted && themeAudio.paused) themeAudio.play().catch(function(){});
             syncAudioBtn();
         });
     }
-    audio.addEventListener('volumechange', syncAudioBtn);
+    themeAudio.addEventListener('volumechange', syncAudioBtn);
+    syncAudioBtn(); // inizializza icona come muted
 
-    // ── REDUCED MOTION: skip intro, play audio muted ──────────────────────────
+    // ── REDUCED MOTION: skip intro ────────────────────────────────────────────
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         intro.style.display = 'none';
-        audio.volume = 0.4;
-        audio.play().catch(function(){});
+        themeAudio.play().catch(function(){});
         return;
+    }
+
+    // ── HELPER: ci sono sorpassi oggi? ────────────────────────────────────────
+    function hasTodayOvertakes() {
+        try {
+            var raw = localStorage.getItem('gp_overtakes');
+            if (!raw) return false;
+            var obj = JSON.parse(raw);
+            var today = new Date().toISOString().slice(0, 10);
+            return obj.date === today && obj.list && obj.list.length > 0;
+        } catch(e) { return false; }
     }
 
     // ── HELPERS ───────────────────────────────────────────────────────────────
@@ -371,27 +385,22 @@
     var rafId = null;
 
     function trigger(el)   { if (el) el.style.animationPlayState = 'running'; }
-    function hideIntro()   {
+    function hideIntro() {
         intro.style.transition = 'opacity 0.6s ease';
         intro.style.opacity    = '0';
-        // After fade, lower volume slightly (music continues in bg)
         setTimeout(function () {
             intro.style.display = 'none';
-            fadeVolume(audio, 0.4, 0.28, 3000);
+            // Avvia musica di sottofondo (muta di default, l'utente può attivarla)
+            themeAudio.volume = 0.28;
+            themeAudio.play().catch(function(){});
+            // Se ci sono sorpassi oggi, suona fanfare una sola volta
+            if (hasTodayOvertakes()) {
+                setTimeout(function () {
+                    overtakeAudio.volume = 0.75;
+                    overtakeAudio.play().catch(function(){});
+                }, 400);
+            }
         }, 620);
-    }
-
-    function fadeVolume(aud, from, to, ms) {
-        var steps  = 40;
-        var delta  = (to - from) / steps;
-        var delay  = ms / steps;
-        var step   = 0;
-        aud.volume = from;
-        var iv = setInterval(function () {
-            step++;
-            aud.volume = Math.max(0, Math.min(1, from + delta * step));
-            if (step >= steps) clearInterval(iv);
-        }, delay);
     }
 
     // ── rAF LOOP: drives animation from audio.currentTime ─────────────────────
@@ -472,9 +481,9 @@
 
     function launch() {
         if (startBtn) startBtn.style.display = 'none';
-        audio.volume = 0.4;
+        audio.volume = 0.8;
         audio.currentTime = 0;
-        audio.play().catch(function(e){ console.warn('audio play failed:', e); });
+        audio.play().catch(function(e){ console.warn('audio play failed:', e); runFallback(); });
         runFallback();
     }
 
