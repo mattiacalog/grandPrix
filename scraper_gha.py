@@ -71,7 +71,29 @@ def make_driver():
     })
     return driver
 
-SHOTS_DIR = os.path.join(BASE_DIR, "debug_shots")
+SHOTS_DIR    = os.path.join(BASE_DIR, "debug_shots")
+COOKIES_PATH = "/tmp/fb_cookies.json"
+
+def load_cookies(driver):
+    if not os.path.exists(COOKIES_PATH):
+        print("Nessun cookie trovato, procedo senza login.")
+        return
+    cookies = json.loads(open(COOKIES_PATH).read())
+    driver.get("https://www.facebook.com")
+    time.sleep(3)
+    for c in cookies:
+        # Selenium accetta solo alcuni campi
+        cookie = {k: c[k] for k in ("name", "value", "domain", "path", "secure") if k in c}
+        if "expirationDate" in c:
+            cookie["expiry"] = int(c["expirationDate"])
+        try:
+            driver.add_cookie(cookie)
+        except Exception:
+            pass
+    driver.refresh()
+    time.sleep(4)
+    shot(driver, "01_after_cookies")
+    print(f"Cookie caricati. Titolo: {driver.title}")
 
 def shot(driver, name):
     os.makedirs(SHOTS_DIR, exist_ok=True)
@@ -125,8 +147,7 @@ def accept_cookies(driver):
 def scrape():
     print(f"\n[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}] Avvio scraping...")
     driver = make_driver()
-    # Vai direttamente al gruppo senza homepage
-    # accept_cookies(driver)
+    load_cookies(driver)
 
     today   = datetime.date.today().strftime("%Y-%m-%d")
     results = {}
