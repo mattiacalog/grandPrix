@@ -102,6 +102,14 @@ def accept_cookies(driver):
 
     print("Nessun banner cookie trovato, procedo.")
     print(f"Titolo pagina: {driver.title}")
+    # Stampa tutti i bottoni visibili per capire cosa c'è sulla pagina
+    try:
+        buttons = driver.find_elements(By.TAG_NAME, "button")
+        print(f"Bottoni trovati: {len(buttons)}")
+        for b in buttons[:10]:
+            print(f"  button: '{b.text.strip()[:80]}'")
+    except Exception as e:
+        print(f"Errore listing bottoni: {e}")
 
 def scrape():
     print(f"\n[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}] Avvio scraping...")
@@ -111,7 +119,7 @@ def scrape():
     today   = datetime.date.today().strftime("%Y-%m-%d")
     results = {}
 
-    for g in GROUPS:
+    for g in GROUPS[:1]:  # TODO: rimuovere [:1] dopo il debug
         gid, gurl = g["id"], g["url"]
         print(f"  -> {gid}")
         try:
