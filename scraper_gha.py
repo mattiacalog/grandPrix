@@ -125,7 +125,8 @@ def accept_cookies(driver):
 def scrape():
     print(f"\n[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}] Avvio scraping...")
     driver = make_driver()
-    accept_cookies(driver)
+    # Vai direttamente al gruppo senza homepage
+    # accept_cookies(driver)
 
     today   = datetime.date.today().strftime("%Y-%m-%d")
     results = {}
@@ -136,6 +137,7 @@ def scrape():
         try:
             driver.get(gurl)
             time.sleep(5)
+            shot(driver, f"group_{gid}")
 
             found = False
             for xpath in ["//*[contains(text(), 'Membri:')]", "//*[contains(text(), 'members')]"]:
