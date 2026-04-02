@@ -33,8 +33,18 @@ const fmtPct  = n  => n === null ? '--' : `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`
 const fmtAvg  = n  => n === null ? '--' : `${fmtSign(Math.round(n))}/g`;
 
 function parseDate(str) {
-    const [y, m, d] = str.split('-').map(Number);
+    // Supporta sia "2026-04-03" che "2026-04-03T09:00"
+    const [datePart, timePart] = str.split('T');
+    const [y, m, d] = datePart.split('-').map(Number);
+    if (timePart) {
+        const [h, min] = timePart.split(':').map(Number);
+        return new Date(y, m - 1, d, h, min || 0);
+    }
     return new Date(y, m - 1, d);
+}
+function snapDateStr(str) {
+    // Restituisce solo la parte data "2026-04-03"
+    return str.split('T')[0];
 }
 function fmtDate(str) {
     return parseDate(str).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -59,6 +69,23 @@ function animateCount(el, to, duration) {
 // ─── STAT HELPERS ────────────────────────────────────────────────────────────
 
 function latestSnap() { return snapshots[snapshots.length - 1]; }
+
+/** Returns the first snapshot of today (calendar day of the latest snapshot), or null */
+function getFirstSnapshotToday() {
+    if (snapshots.length < 2) return null;
+    const todayStr = snapDateStr(snapshots[snapshots.length - 1].date);
+    // Trova il primo snapshot della giornata corrente
+    const first = snapshots.find(s => snapDateStr(s.date) === todayStr);
+    const latest = snapshots[snapshots.length - 1];
+    // Se il primo è lo stesso dell'ultimo (unico snapshot oggi), usa l'ultimo di ieri
+    if (!first || first === latest) {
+        for (let i = snapshots.length - 2; i >= 0; i--) {
+            if (snapDateStr(snapshots[i].date) !== todayStr) return snapshots[i];
+        }
+        return null;
+    }
+    return first;
+}
 
 /** Returns the closest snapshot at least daysAgo before the latest, or null */
 function getSnapshotBefore(daysAgo) {
@@ -219,7 +246,7 @@ function renderBattleForecast() {
 
 function renderHeroStats() {
     const to      = latestSnap();
-    const from1   = getSnapshotBefore(1);
+    const from1   = getFirstSnapshotToday(); // primo snapshot della giornata
     const from7   = getSnapshotBefore(7);
     const from30  = getSnapshotBefore(30);
     const from365 = getSnapshotBefore(365);
@@ -515,7 +542,12 @@ function render(index) {
         const pct = maxVal > 0 ? (val / maxVal) * 100 : 0;
 
         let delta = null;
-        if (index > 0) delta = val - (snapshots[index - 1].data[g.id] || 0);
+        if (index > 0) {
+            const todayStr = snapDateStr(snap.date);
+            const firstToday = snapshots.find(s => snapDateStr(s.date) === todayStr);
+            const fromSnap = (firstToday && firstToday !== snap) ? firstToday : snapshots[index - 1];
+            delta = val - (fromSnap.data[g.id] || 0);
+        }
 
         const row = document.getElementById(`row-${g.id}`);
 

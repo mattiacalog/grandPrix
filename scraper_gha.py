@@ -246,6 +246,7 @@ def scrape():
     driver = make_driver()
     load_cookies(driver)
 
+    now     = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M")
     today   = datetime.date.today().strftime("%Y-%m-%d")
     results = {}
 
@@ -305,13 +306,14 @@ def scrape():
         data = json.load(f)
 
     snapshots = data.get("snapshots", [])
-    existing  = next((s for s in snapshots if s["date"] == today), None)
+    # Ogni run è uno snapshot separato con timestamp completo
+    existing = next((s for s in snapshots if s["date"] == now), None)
     if existing:
         existing["data"].update(results)
-        print(f"Snapshot {today} aggiornato.")
+        print(f"Snapshot {now} aggiornato.")
     else:
-        snapshots.append({"date": today, "data": results})
-        print(f"Nuovo snapshot {today}.")
+        snapshots.append({"date": now, "data": results})
+        print(f"Nuovo snapshot {now}.")
 
     snapshots.sort(key=lambda s: s["date"])
     data["snapshots"] = snapshots
