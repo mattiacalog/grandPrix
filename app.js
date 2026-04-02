@@ -24,6 +24,7 @@ let current = 0, playing = false, playTimer = null, chart = null;
 let modalPeriod = 7;
 let prevRanks = {};
 let gapMode = 'interval'; // 'interval' | 'leader'
+let initialRender = true;
 
 // ─── UTILS ───────────────────────────────────────────────────────────────────
 const fmt     = n  => Math.round(n).toLocaleString('it-IT');
@@ -41,6 +42,18 @@ function fmtDate(str) {
 function hexToRgb(hex) {
     const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
     return `${r},${g},${b}`;
+}
+
+function animateCount(el, to, duration) {
+    duration = duration || 1400;
+    var start = performance.now();
+    function step(now) {
+        var t = Math.min((now - start) / duration, 1);
+        var eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = fmt(Math.round(to * eased));
+        if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
 }
 
 // ─── STAT HELPERS ────────────────────────────────────────────────────────────
@@ -527,8 +540,20 @@ function render(index) {
 
         row.style.top = `${rank * (BAR_H + BAR_GAP)}px`;
 
-        document.getElementById(`fill-${g.id}`).style.width = `${Math.max(pct, 0.3)}%`;
-        document.getElementById(`count-${g.id}`).textContent = fmt(val);
+        const fillEl = document.getElementById(`fill-${g.id}`);
+        fillEl.style.width = `${Math.max(pct, 0.3)}%`;
+        if (rank === 0) {
+            const glowColor = g.color || '#E8002D';
+            fillEl.style.boxShadow = `0 0 14px ${glowColor}99, 0 0 30px ${glowColor}44`;
+        } else {
+            fillEl.style.boxShadow = '';
+        }
+        const countEl = document.getElementById(`count-${g.id}`);
+        if (initialRender) {
+            animateCount(countEl, val, 1400 + rank * 40);
+        } else {
+            countEl.textContent = fmt(val);
+        }
 
         // Gap display
         const gapEl = document.getElementById(`gap-${g.id}`);
@@ -551,6 +576,10 @@ function render(index) {
         rankEl.textContent = rank + 1;
         const podioClass = rank === 0 ? ' p1' : rank === 1 ? ' p2' : rank === 2 ? ' p3' : '';
         rankEl.className = `bar-rank${podioClass}${g.id === OUR_ID ? ' our' : ''}`;
+        if (initialRender && rank <= 2) {
+            rankEl.classList.remove('rank-pop');
+            setTimeout(() => rankEl.classList.add('rank-pop'), 700 + rank * 180);
+        }
 
         // Pos delta: mostra solo se il gruppo ha fatto un sorpasso oggi
         const posDeltaEl = document.getElementById(`posdelta-${g.id}`);
@@ -592,6 +621,7 @@ function render(index) {
         }
     });
 
+    initialRender = false;
     document.getElementById('current-date').textContent = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
     document.getElementById('timeline').value = index;
     updateChartLine(index);
@@ -854,6 +884,7 @@ async function init() {
 
     function setYRange(focused) {
         yFocused = focused;
+        document.getElementById('chart-focus').classList.toggle('active', focused);
         if (focused) {
             // Usa l'ultimo valore visibile di ogni dataset nel grafico corrente
             const lastIdx = chart.data.labels.length - 1;
@@ -886,8 +917,7 @@ async function init() {
         chart.update();
     }
 
-    document.getElementById('chart-focus').addEventListener('click', () => setYRange(true));
-    document.getElementById('chart-all').addEventListener('click',   () => setYRange(false));
+    document.getElementById('chart-focus').addEventListener('click', () => setYRange(!yFocused));
 
     let chartRelative = false;
     function setChartMode(relative) {
@@ -961,6 +991,10 @@ async function init() {
         e.target.style.background  = '#e63946';
         e.target.style.borderColor = '#e63946';
         e.target.style.color       = '#fff';
+        const wrapper = document.querySelector('.chart-wrapper');
+        wrapper.classList.remove('slide-anim');
+        void wrapper.offsetWidth;
+        wrapper.classList.add('slide-anim');
         filterChartByDays(+e.target.dataset.days);
     });
 
