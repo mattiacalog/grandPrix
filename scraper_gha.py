@@ -60,9 +60,22 @@ def make_driver():
     opts.add_experimental_option("excludeSwitches", ["enable-automation"])
     return webdriver.Chrome(options=opts)
 
+def accept_cookies(driver):
+    driver.get("https://www.facebook.com")
+    time.sleep(4)
+    try:
+        btn = driver.find_element(By.XPATH,
+            "//button[contains(., 'Consenti tutti i cookie') or contains(., 'Allow all cookies') or contains(., 'Accept all')]")
+        btn.click()
+        print("Cookie banner accettato.")
+        time.sleep(2)
+    except Exception:
+        print("Nessun banner cookie trovato, procedo.")
+
 def scrape():
     print(f"\n[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}] Avvio scraping...")
     driver = make_driver()
+    accept_cookies(driver)
 
     today   = datetime.date.today().strftime("%Y-%m-%d")
     results = {}
