@@ -109,34 +109,31 @@ def try_relogin(driver):
             return False
         return not any(ex in txt for ex in EXCLUDE)
 
-    # Strategia 1: <a> che contiene il nome profilo nel testo (cerca nel sottoalbero)
-    if profile_name and not clicked:
-        try:
-            btn = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.XPATH,
-                    f"//a[.//*[contains(text(),'{profile_name}')] or contains(text(),'{profile_name}')]"
-                ))
-            )
-            btn.click()
-            print(f"Profilo '{profile_name}' cliccato.")
+    # Usa execute_script con la stessa query JS che funziona nel browser
+    profile_keyword = profile_name.lower() if profile_name else "jennifer"
+    js = f"""
+        var elements = document.querySelectorAll(
+            '[role="button"].x1i10hfl.xjbqb8w.xjqpnuy.xc5r6h4.xqeqjp1.x1phubyo.x13fuv20.x18b5jzi' +
+            '.x1q0q8m5.x1t7ytsu.x972fbf.x10w94by.x1qhh985.x14e42zd.x9f619.x1ypdohk.xdl72j9' +
+            '.x2lah0s.x3ct3a4.xdj266r.x14z9mp.xat24cr.x1lziwak.xeuugli.xyri2b.x1c1uobl' +
+            '.x1n2onr6.x16tdsg8.x1hl2dhg.xggy1nq.x1ja2u2z.x1t137rt.x1q0g3np.x87ps6o' +
+            '.x1lku1pv.x1a2a7pz.x1yxzw2v.x16t7cu2.xml3ow8.x1nhnf8p.x175kp8w.x6s0dn4' +
+            '.x78zum5.xh8yej3.x1306p81.xxv6tbr'
+        );
+        var target = Array.from(elements).find(el =>
+            el.innerText.toLowerCase().includes("{profile_keyword}")
+        );
+        if (target) {{ target.click(); return "clicked:" + target.innerText.trim().substring(0,40); }}
+        else {{ return "not_found. elementi trovati: " + elements.length; }}
+    """
+    try:
+        result = driver.execute_script(js)
+        print(f"JS profile click: {result}")
+        if result and result.startswith("clicked"):
             clicked = True
             time.sleep(3)
-        except Exception as e:
-            print(f"Strategia 1 fallita: {e}")
-
-    # Strategia 2: primo <a> con immagine circolare (foto profilo) che non è un bottone di sistema
-    if not clicked:
-        try:
-            btns = driver.find_elements(By.XPATH, "//a[.//img]")
-            for btn in btns[:10]:
-                if is_profile_link(btn):
-                    print(f"Profilo cliccato (strategia 2, testo: '{btn.text.strip()[:40]}')")
-                    btn.click()
-                    clicked = True
-                    time.sleep(3)
-                    break
-        except Exception as e:
-            print(f"Strategia 2 fallita: {e}")
+    except Exception as e:
+        print(f"JS profile click fallito: {e}")
 
     shot(driver, "02_after_profile_click")
 
