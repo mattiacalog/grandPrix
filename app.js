@@ -200,6 +200,8 @@ function renderBattleForecast() {
     document.getElementById('bf-car-us').innerHTML   = f1Car('#E8002D');
     const themColor = (groups.find(g => g.id === targetId) || {}).color || '#888';
     document.getElementById('bf-car-them').innerHTML = f1Car(themColor);
+    const iconThem = document.getElementById('bf-icon-them');
+    if (iconThem) iconThem.src = `icons/${targetId}.jpg`;
 }
 
 function renderHeroStats() {

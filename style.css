@@ -382,6 +382,14 @@ body {
 .bf-side-them { align-items: flex-end; }
 .bf-car-wrap { display: flex; justify-content: center; }
 .bf-side-them .bf-car-wrap { transform: scaleX(-1); }
+.bf-them-top { display: flex; align-items: center; gap: 6px; }
+.bf-icon {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(255,255,255,.15);
+    flex-shrink: 0;
+}
 .bf-name {
     font-family: 'DM Sans', sans-serif;
     font-size: .6rem;
