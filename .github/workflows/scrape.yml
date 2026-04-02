@@ -42,5 +42,6 @@ jobs:
           git config user.email "bot@grandprix.local"
           git add data/data.json
           git diff --staged --quiet || git commit -m "data: snapshot $(date -u +'%Y-%m-%d %H:%M UTC')"
-          git pull --rebase
+          git fetch origin main
+          git rebase origin/main
           git push
