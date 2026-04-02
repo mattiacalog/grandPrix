@@ -100,47 +100,43 @@ def try_relogin(driver):
     profile_name = os.environ.get("FB_PROFILE_NAME", "")
     clicked = False
 
-    # Strategia 1: cerca per nome profilo se fornito
+    # Parole da escludere — non sono profili salvati
+    EXCLUDE = ['crea', 'nuovo', 'account', 'usa altro', 'profilo', 'accedi', 'login']
+
+    def is_profile_link(el):
+        txt = el.text.strip().lower()
+        if not txt:
+            return False
+        return not any(ex in txt for ex in EXCLUDE)
+
+    # Strategia 1: <a> che contiene il nome profilo nel testo (cerca nel sottoalbero)
     if profile_name and not clicked:
         try:
             btn = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.XPATH, f"//*[contains(text(), '{profile_name}')]"))
+                EC.element_to_be_clickable((By.XPATH,
+                    f"//a[.//*[contains(text(),'{profile_name}')] or contains(text(),'{profile_name}')]"
+                ))
             )
             btn.click()
             print(f"Profilo '{profile_name}' cliccato.")
             clicked = True
             time.sleep(3)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Strategia 1 fallita: {e}")
 
-    # Strategia 2: clicca il primo <a> che ha dentro un'immagine (profilo con foto)
+    # Strategia 2: primo <a> con immagine circolare (foto profilo) che non è un bottone di sistema
     if not clicked:
         try:
-            btns = driver.find_elements(By.XPATH, "//a[.//image or .//img]")
-            # Prende il primo che ha testo non vuoto (nome profilo)
-            for btn in btns[:6]:
-                if btn.text.strip():
+            btns = driver.find_elements(By.XPATH, "//a[.//img]")
+            for btn in btns[:10]:
+                if is_profile_link(btn):
+                    print(f"Profilo cliccato (strategia 2, testo: '{btn.text.strip()[:40]}')")
                     btn.click()
-                    print(f"Profilo cliccato (testo: '{btn.text.strip()[:30]}')")
                     clicked = True
                     time.sleep(3)
                     break
         except Exception as e:
             print(f"Strategia 2 fallita: {e}")
-
-    # Strategia 3: qualsiasi <a> nella zona del profile picker
-    if not clicked:
-        try:
-            links = driver.find_elements(By.XPATH,
-                "//a[contains(@class,'x1n2onr6') or contains(@class,'x1i10hfl')]"
-            )
-            if links:
-                links[0].click()
-                print("Profilo cliccato (strategia 3).")
-                clicked = True
-                time.sleep(3)
-        except Exception as e:
-            print(f"Strategia 3 fallita: {e}")
 
     shot(driver, "02_after_profile_click")
 
