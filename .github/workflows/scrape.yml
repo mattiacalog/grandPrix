@@ -28,7 +28,7 @@ jobs:
       - name: Write Facebook cookies
         env:
           FB_COOKIES: ${{ secrets.FB_COOKIES }}
-        run: echo "$FB_COOKIES" > /tmp/fb_cookies.json
+        run: python -c "import os; open('/tmp/fb_cookies.json','w').write(os.environ['FB_COOKIES'])"
 
       - name: Run scraper
         run: python -u scraper_gha.py
