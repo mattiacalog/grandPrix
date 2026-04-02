@@ -86,6 +86,16 @@ function avgDailyGrowth(groupId, from, to) {
     return g / days;
 }
 
+/** Best single day: max daily delta across all snapshots (ignores from/to, uses full history) */
+function bestDayGrowth(groupId) {
+    let best = null, bestDate = null;
+    for (let i = 1; i < snapshots.length; i++) {
+        const d = (snapshots[i].data[groupId] || 0) - (snapshots[i-1].data[groupId] || 0);
+        if (d > 0 && (best === null || d > best)) { best = d; bestDate = snapshots[i].date; }
+    }
+    return { val: best, date: bestDate };
+}
+
 /** Standard deviation of daily growth across snapshots in range */
 function growthStdDev(groupId, from, to) {
     const inRange = snapshots.filter(s => {
@@ -127,6 +137,71 @@ function countOvertakes(groupId, from, to) {
 
 // ─── HERO STRIP ──────────────────────────────────────────────────────────────
 
+// ─── BATTLE FORECAST ─────────────────────────────────────────────────────────
+
+function renderBattleForecast() {
+    const to      = latestSnap();
+    const from30  = getSnapshotBefore(30);
+    const ranks   = getRankAt(to);
+    const sorted  = [...groups].sort((a, b) => (to.data[b.id]||0) - (to.data[a.id]||0));
+    const ourRank = ranks[OUR_ID]; // 1-based
+    const ourIdx  = ourRank - 1;
+
+    // Populate target selector with groups above us
+    const sel = document.getElementById('bf-target-sel');
+    if (sel && sel.options.length === 0) {
+        const above = sorted.slice(0, ourIdx);
+        above.forEach((g, i) => {
+            const opt = document.createElement('option');
+            opt.value = g.id;
+            opt.textContent = g.name;
+            if (i === above.length - 1) opt.selected = true; // default: immediately ahead
+            sel.appendChild(opt);
+        });
+        sel.addEventListener('change', renderBattleForecast);
+    }
+
+    const targetId = sel ? sel.value : null;
+    if (!targetId) return;
+
+    const targetGroup = groups.find(g => g.id === targetId);
+    const ourVal      = to.data[OUR_ID]    || 0;
+    const themVal     = to.data[targetId]  || 0;
+    const gap         = themVal - ourVal;
+
+    // Avg daily growth over 30d
+    const ourAvg  = from30 ? (absGrowth(OUR_ID,   from30, to) / Math.max(1, daysBetween(from30, to))) : 0;
+    const themAvg = from30 ? (absGrowth(targetId,  from30, to) / Math.max(1, daysBetween(from30, to))) : 0;
+    const netGain = ourAvg - themAvg;
+
+    // Days to catch up
+    let days = null, verdict = 'NEVER', unit = '', diffPct = 100;
+    if (netGain > 0) {
+        days = Math.ceil(gap / netGain);
+        if (days <= 7)       { verdict = 'STRIKING DISTANCE'; unit = 'GIORNI'; diffPct = 15; }
+        else if (days <= 30) { verdict = 'IN AVVICINAMENTO';  unit = 'GIORNI'; diffPct = 40; }
+        else if (days <= 90) { verdict = 'DISTANZA MEDIA';    unit = 'GIORNI'; diffPct = 65; }
+        else                 { verdict = 'DISTANZA ELEVATA';  unit = 'GIORNI'; diffPct = 85; }
+    } else {
+        verdict = 'SI ALLONTANA'; unit = ''; diffPct = 100;
+    }
+
+    // Update UI
+    document.getElementById('bf-name-us').textContent  = 'A chi viene a prenderlo';
+    document.getElementById('bf-pos-us').textContent   = `#${ourRank}`;
+    document.getElementById('bf-gap-them').textContent = `+${fmt(gap)}`;
+    document.getElementById('bf-verdict-lbl').textContent = verdict;
+    document.getElementById('bf-days').textContent     = days !== null ? days : '∞';
+    document.getElementById('bf-unit').textContent     = unit;
+    document.getElementById('bf-diff-fill').style.width = `${diffPct}%`;
+    document.getElementById('bf-diff-fill').className  = `bf-diff-fill ${diffPct < 40 ? 'diff-easy' : diffPct < 70 ? 'diff-med' : 'diff-hard'}`;
+
+    // Cars
+    document.getElementById('bf-car-us').innerHTML   = f1Car('#E8002D');
+    const themColor = (groups.find(g => g.id === targetId) || {}).color || '#888';
+    document.getElementById('bf-car-them').innerHTML = f1Car(themColor);
+}
+
 function renderHeroStats() {
     const to      = latestSnap();
     const from1   = getSnapshotBefore(1);
@@ -163,7 +238,7 @@ function renderHeroStats() {
     document.getElementById('hero-total').textContent       = fmt(to.data[OUR_ID] || 0);
     document.getElementById('hero-trend-rank').textContent  = `#${trendRank}`;
     document.getElementById('hero-overtakes').textContent   = overtakes;
-    document.getElementById('hero-avg').textContent         = avgGrowth !== null ? `+${avgGrowth}/g` : '—';
+    document.getElementById('hero-avg').textContent         = avgGrowth !== null ? `+${Math.round(avgGrowth)}/g` : '—';
 
     function setGrowth(id, val) {
         const el = document.getElementById(id);
@@ -179,8 +254,8 @@ function renderHeroStats() {
 
 // ─── MODAL ───────────────────────────────────────────────────────────────────
 
-function openModal()  { const el = document.getElementById('modal-overlay'); el.style.display = 'flex'; renderModal(modalPeriod); }
-function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+function openModal()  { const el = document.getElementById('modal-overlay'); el.classList.add('open'); renderModal(modalPeriod); }
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
 
 function renderModal(days) {
     modalPeriod = days;
@@ -206,11 +281,11 @@ function renderModal(days) {
     }
 
     body.innerHTML = [
-        buildSection('🏆 Crescita assoluta', from, to, 'abs'),
-        buildSection('📈 Crescita %', from, to, 'pct'),
-        buildSection('📅 Media giornaliera', from, to, 'avg'),
-        buildSection('📊 Stabilità crescita', from, to, 'stability'),
-        buildSection('📉 Crescita minore', from, to, 'worst'),
+        buildSection('Crescita assoluta', 'Quanti iscritti ha guadagnato ogni gruppo nel periodo', from, to, 'abs'),
+        buildSection('Crescita %', 'Di quanto è cresciuto ogni gruppo rispetto alla sua dimensione', from, to, 'pct'),
+        buildSection('Media giornaliera', 'Quanti iscritti guadagna ogni gruppo in media al giorno', from, to, 'avg'),
+        buildSection('Crescita minore', 'I gruppi che hanno guadagnato meno iscritti nel periodo', from, to, 'worst'),
+        buildSection('Record giornaliero', 'Il miglior singolo giorno di sempre per ogni gruppo', from, to, 'bestday'),
     ].join('');
 
     // Attach toggle handlers
@@ -227,7 +302,7 @@ function renderModal(days) {
     });
 }
 
-function buildSection(title, from, to, type) {
+function buildSection(title, subtitle, from, to, type) {
     let sorted, valueFn, fmtFn;
 
     if (type === 'abs') {
@@ -241,22 +316,19 @@ function buildSection(title, from, to, type) {
     } else if (type === 'avg') {
         sorted  = [...groups].sort((a, b) => (avgDailyGrowth(b.id, from, to)||0) - (avgDailyGrowth(a.id, from, to)||0));
         valueFn = g => avgDailyGrowth(g.id, from, to);
-        fmtFn   = v => fmtAvg(v);
-    } else if (type === 'stability') {
-        sorted = [...groups].sort((a, b) => {
-            const va = growthStdDev(a.id, from, to);
-            const vb = growthStdDev(b.id, from, to);
-            if (va === null && vb === null) return 0;
-            if (va === null) return 1;
-            if (vb === null) return -1;
-            return va - vb;
-        });
-        valueFn = g => growthStdDev(g.id, from, to);
-        fmtFn   = v => v === null ? '--' : `±${fmt(v)}`;
+        fmtFn   = v => v === null ? '--' : `+${Math.round(v)}/g`;
     } else if (type === 'worst') {
         sorted  = [...groups].sort((a, b) => (absGrowth(a.id, from, to)||0) - (absGrowth(b.id, from, to)||0));
         valueFn = g => absGrowth(g.id, from, to);
         fmtFn   = v => fmtSign(v);
+    } else if (type === 'bestday') {
+        sorted  = [...groups].sort((a, b) => (bestDayGrowth(b.id).val||0) - (bestDayGrowth(a.id).val||0));
+        valueFn = g => bestDayGrowth(g.id);
+        fmtFn   = v => {
+            if (!v || v.val === null) return '--';
+            const d = parseDate(v.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+            return `+${fmt(v.val)} <span class="lb-val-sub">${d}</span>`;
+        };
     }
 
     const ourIdx = sorted.findIndex(g => g.id === OUR_ID);
@@ -270,7 +342,7 @@ function buildSection(title, from, to, type) {
             <div class="lb-rank">${rankLabel}</div>
             <div class="lb-icon" style="background-image:url('icons/${g.id}.jpg');background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
             <div class="lb-name">${isOurs ? `👑 ${g.name}` : g.name}</div>
-            <div class="lb-val">${fmtFn(val)}</div>
+            <div class="lb-val lb-val-html">${fmtFn(val)}</div>
         </div>`;
     };
 
@@ -289,6 +361,7 @@ function buildSection(title, from, to, type) {
 
     return `<div class="stat-section">
         <div class="stat-section-title">${title}</div>
+        <div class="stat-section-sub">${subtitle}</div>
         <div class="lb-list">${listHtml}</div>
         <div class="lb-full">${fullHtml}</div>
         <button class="lb-toggle">▼ Mostra tutti ${groups.length}</button>
@@ -310,7 +383,10 @@ function buildBars() {
         row.style.top = `${i * (BAR_H + BAR_GAP)}px`;
 
         row.innerHTML = `
-            <div class="bar-rank" id="rank-${g.id}">1</div>
+            <div class="bar-rank-wrap">
+                <div class="bar-rank" id="rank-${g.id}">1</div>
+                <div class="pos-delta" id="posdelta-${g.id}"></div>
+            </div>
             <div class="bar-icon" style="background-image:url('icons/${g.id}.jpg');background-size:cover;background-position:center;background-repeat:no-repeat;"></div>
             <div class="bar-name-wrap">
                 <div class="bar-name" title="${g.name}">${g.name}</div>
@@ -333,6 +409,72 @@ function buildBars() {
 
 // ─── RENDER SNAPSHOT ─────────────────────────────────────────────────────────
 
+// ─── OVERTAKE PANEL ──────────────────────────────────────────────────────────
+const OV_KEY = 'gp_overtakes';
+
+function todayStr() {
+    return new Date().toISOString().slice(0, 10);
+}
+
+function loadOvertakes() {
+    try {
+        const raw = localStorage.getItem(OV_KEY);
+        if (!raw) return [];
+        const obj = JSON.parse(raw);
+        if (obj.date !== todayStr()) return [];
+        return obj.list || [];
+    } catch(e) { return []; }
+}
+
+function saveOvertake(gUp, gDown, newPos) {
+    const list = loadOvertakes();
+    // Avoid duplicates
+    const exists = list.some(o => o.upId === gUp.id && o.downId === gDown.id);
+    if (!exists) list.push({ upId: gUp.id, upName: gUp.name, downId: gDown.id, downName: gDown.name, pos: newPos });
+    localStorage.setItem(OV_KEY, JSON.stringify({ date: todayStr(), list }));
+}
+
+function renderOvertakePanel() {
+    const list = loadOvertakes();
+    const panel = document.getElementById('overtake-panel');
+    const listEl = document.getElementById('overtake-list');
+    if (!panel || !listEl) return;
+    if (list.length === 0) { panel.style.display = 'none'; return; }
+
+    panel.style.display = 'block';
+    listEl.innerHTML = list.map(o => {
+        const colorUp   = (groups.find(g => g.id === o.upId)   || {}).color || '#E8002D';
+        const colorDown = (groups.find(g => g.id === o.downId) || {}).color || '#888';
+        return `
+        <div class="ov-row ov-row-new">
+            <div class="ov-side">
+                <img class="ov-icon" src="icons/${o.upId}.jpg" alt="">
+                <span class="ov-car-inline">${f1Car(colorUp)}</span>
+                <span class="ov-name-full ov-name-up">${o.upName}</span>
+            </div>
+            <div class="ov-middle">
+                <span class="ov-badge-pos">P${o.pos + 1}→P${o.pos}</span>
+                <svg class="ov-chev" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+            <div class="ov-side ov-side-down">
+                <span class="ov-name-full ov-name-down">${o.downName}</span>
+                <span class="ov-car-inline">${f1Car(colorDown)}</span>
+                <img class="ov-icon" src="icons/${o.downId}.jpg" alt="">
+            </div>
+        </div>`;
+    }).join('');
+
+    // Animate new rows
+    setTimeout(() => {
+        listEl.querySelectorAll('.ov-row-new').forEach(r => r.classList.remove('ov-row-new'));
+    }, 50);
+}
+
+function recordOvertake(gUp, gDown, newPos) {
+    saveOvertake(gUp, gDown, newPos);
+    renderOvertakePanel();
+}
+
 function render(index) {
     const snap      = snapshots[index];
     const counts    = snap.data;
@@ -342,11 +484,14 @@ function render(index) {
     const isLast    = index === snapshots.length - 1;
 
     // Fastest lap: group with highest positive daily delta
+    // DNF: group with lowest daily delta (most negative or least growth)
     let fastestId = null, fastestDelta = 0;
+    let dnfId = null, dnfDelta = Infinity;
     if (index > 0) {
         groups.forEach(g => {
             const d = (counts[g.id] || 0) - (snapshots[index - 1].data[g.id] || 0);
             if (d > fastestDelta) { fastestDelta = d; fastestId = g.id; }
+            if (d < dnfDelta) { dnfDelta = d; dnfId = g.id; }
         });
     }
 
@@ -359,11 +504,14 @@ function render(index) {
 
         const row = document.getElementById(`row-${g.id}`);
 
-        // Overtake flash
+        // Overtake flash + alert
         if (prevRanks[g.id] !== undefined && rank < prevRanks[g.id]) {
             row.classList.remove('overtake-flash');
             void row.offsetWidth;
             row.classList.add('overtake-flash');
+            // Find who was overtaken (group now at rank+1 that was previously at rank)
+            const overtaken = sorted[rank + 1];
+            if (overtaken) recordOvertake(g, overtaken, rank + 1);
         }
         prevRanks[g.id] = rank;
 
@@ -402,6 +550,27 @@ function render(index) {
         const podioClass = rank === 0 ? ' p1' : rank === 1 ? ' p2' : rank === 2 ? ' p3' : '';
         rankEl.className = `bar-rank${podioClass}${g.id === OUR_ID ? ' our' : ''}`;
 
+        // Pos delta: mostra solo se il gruppo ha fatto un sorpasso oggi
+        const posDeltaEl = document.getElementById(`posdelta-${g.id}`);
+        if (posDeltaEl) {
+            const todayOvs = loadOvertakes();
+            const gainedPos = todayOvs.some(o => o.upId === g.id);
+            const lostPos   = todayOvs.some(o => o.downId === g.id);
+            if (gainedPos) {
+                posDeltaEl.textContent = '▲';
+                posDeltaEl.className = 'pos-delta up';
+                rankEl.classList.add('rank-gained');
+            } else if (lostPos) {
+                posDeltaEl.textContent = '▼';
+                posDeltaEl.className = 'pos-delta down';
+                rankEl.classList.add('rank-lost');
+            } else {
+                posDeltaEl.textContent = '';
+                posDeltaEl.className = 'pos-delta';
+                rankEl.classList.remove('rank-gained', 'rank-lost');
+            }
+        }
+
         const deltaEl = document.getElementById(`daydelta-${g.id}`);
         if (delta !== null) {
             deltaEl.textContent = delta >= 0 ? `+${fmt(delta)}` : fmt(delta);
@@ -416,7 +585,7 @@ function render(index) {
         if (badgesEl) {
             const badges = [];
             if (g.id === fastestId) badges.push(`<span class="badge fastest-lap">FASTEST</span>`);
-            if (delta !== null && delta < -50) badges.push(`<span class="badge dnf-badge">DNF</span>`);
+            if (dnfId && g.id === dnfId) badges.push(`<span class="badge dnf-badge">DNF</span>`);
             badgesEl.innerHTML = badges.join('');
         }
     });
@@ -825,8 +994,11 @@ async function init() {
     current = snapshots.length - 1;
     render(current);
     renderHeroStats();
+    renderOvertakePanel();
+    renderBattleForecast();
     setChartMode(false);
     setYRange(true);
+
 }
 
 init().catch(err => {
