@@ -6,6 +6,8 @@ Headless Chrome su Linux, nessun login richiesto
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import time, re, json, os, datetime
 
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
@@ -71,16 +73,8 @@ def make_driver():
 
 def accept_cookies(driver):
     driver.get("https://www.facebook.com")
-    time.sleep(8)
 
-    # Salva screenshot per debug
-    try:
-        driver.save_screenshot("/tmp/fb_homepage.png")
-        print("Screenshot salvato in /tmp/fb_homepage.png")
-    except Exception:
-        pass
-
-    # Prova vari testi del bottone cookie (IT, EN, varianti)
+    # Aspetta fino a 15s che appaia un bottone del cookie banner
     keywords = [
         'Consenti tutti i cookie',
         'Allow all cookies',
@@ -89,17 +83,18 @@ def accept_cookies(driver):
         'Accetta tutti',
         'Allow essential and optional cookies',
     ]
-    xpath = " or ".join([f"contains(normalize-space(.), '{k}')" for k in keywords])
+    xpath = "//button[" + " or ".join([f"contains(normalize-space(.), '{k}')" for k in keywords]) + "]"
+
     try:
-        btn = driver.find_element(By.XPATH, f"//button[{xpath}]")
-        btn.click()
+        btn = WebDriverWait(driver, 15).until(EC.element_to_be_clickable((By.XPATH, xpath)))
         print(f"Cookie banner accettato: '{btn.text.strip()}'")
+        btn.click()
         time.sleep(3)
         return
     except Exception:
         pass
 
-    # Fallback: cerca qualunque bottone con data-cookiebanner
+    # Fallback data-cookiebanner
     try:
         btn = driver.find_element(By.CSS_SELECTOR, "[data-cookiebanner='accept_button']")
         btn.click()
@@ -109,10 +104,13 @@ def accept_cookies(driver):
     except Exception:
         pass
 
-    print("Nessun banner cookie trovato, procedo.")
-    print(f"Titolo pagina: {driver.title}")
-    print(f"URL corrente: {driver.current_url}")
-    print(f"HTML (primi 3000 char):\n{driver.page_source[:3000]}")
+    print("Nessun banner cookie trovato.")
+    print(f"Titolo: {driver.title} | URL: {driver.current_url}")
+    # Stampa tutti i bottoni presenti
+    buttons = driver.find_elements(By.TAG_NAME, "button")
+    print(f"Bottoni nella pagina: {len(buttons)}")
+    for b in buttons[:15]:
+        print(f"  '{b.text.strip()[:80]}'")
 
 def scrape():
     print(f"\n[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}] Avvio scraping...")
