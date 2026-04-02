@@ -62,15 +62,46 @@ def make_driver():
 
 def accept_cookies(driver):
     driver.get("https://www.facebook.com")
-    time.sleep(4)
+    time.sleep(5)
+
+    # Salva screenshot per debug
     try:
-        btn = driver.find_element(By.XPATH,
-            "//button[contains(., 'Consenti tutti i cookie') or contains(., 'Allow all cookies') or contains(., 'Accept all')]")
-        btn.click()
-        print("Cookie banner accettato.")
-        time.sleep(2)
+        driver.save_screenshot("/tmp/fb_homepage.png")
+        print("Screenshot salvato in /tmp/fb_homepage.png")
     except Exception:
-        print("Nessun banner cookie trovato, procedo.")
+        pass
+
+    # Prova vari testi del bottone cookie (IT, EN, varianti)
+    keywords = [
+        'Consenti tutti i cookie',
+        'Allow all cookies',
+        'Accept all',
+        'Accetta tutto',
+        'Accetta tutti',
+        'Allow essential and optional cookies',
+    ]
+    xpath = " or ".join([f"contains(normalize-space(.), '{k}')" for k in keywords])
+    try:
+        btn = driver.find_element(By.XPATH, f"//button[{xpath}]")
+        btn.click()
+        print(f"Cookie banner accettato: '{btn.text.strip()}'")
+        time.sleep(3)
+        return
+    except Exception:
+        pass
+
+    # Fallback: cerca qualunque bottone con data-cookiebanner
+    try:
+        btn = driver.find_element(By.CSS_SELECTOR, "[data-cookiebanner='accept_button']")
+        btn.click()
+        print("Cookie banner accettato via data-cookiebanner.")
+        time.sleep(3)
+        return
+    except Exception:
+        pass
+
+    print("Nessun banner cookie trovato, procedo.")
+    print(f"Titolo pagina: {driver.title}")
 
 def scrape():
     print(f"\n[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}] Avvio scraping...")
