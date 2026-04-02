@@ -71,10 +71,20 @@ def make_driver():
     })
     return driver
 
+SHOTS_DIR = os.path.join(BASE_DIR, "debug_shots")
+
+def shot(driver, name):
+    os.makedirs(SHOTS_DIR, exist_ok=True)
+    path = os.path.join(SHOTS_DIR, f"{name}.png")
+    driver.save_screenshot(path)
+    print(f"Screenshot: {path}")
+
 def accept_cookies(driver):
     driver.get("https://www.facebook.com")
+    shot(driver, "01_homepage_load")
+    time.sleep(5)
+    shot(driver, "02_after_5s")
 
-    # Aspetta fino a 15s che appaia un bottone del cookie banner
     keywords = [
         'Consenti tutti i cookie',
         'Allow all cookies',
@@ -90,23 +100,23 @@ def accept_cookies(driver):
         print(f"Cookie banner accettato: '{btn.text.strip()}'")
         btn.click()
         time.sleep(3)
+        shot(driver, "03_after_cookie_click")
         return
     except Exception:
         pass
 
-    # Fallback data-cookiebanner
     try:
         btn = driver.find_element(By.CSS_SELECTOR, "[data-cookiebanner='accept_button']")
         btn.click()
         print("Cookie banner accettato via data-cookiebanner.")
         time.sleep(3)
+        shot(driver, "03_after_cookie_click")
         return
     except Exception:
         pass
 
     print("Nessun banner cookie trovato.")
     print(f"Titolo: {driver.title} | URL: {driver.current_url}")
-    # Stampa tutti i bottoni presenti
     buttons = driver.find_elements(By.TAG_NAME, "button")
     print(f"Bottoni nella pagina: {len(buttons)}")
     for b in buttons[:15]:

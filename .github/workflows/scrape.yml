@@ -28,13 +28,13 @@ jobs:
       - name: Run scraper
         run: python -u scraper_gha.py
 
-      - name: Upload debug screenshot
+      - name: Upload debug screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fb-screenshot
-          path: /tmp/fb_homepage.png
-          retention-days: 1
+          name: debug-shots
+          path: debug_shots/
+          retention-days: 3
 
       - name: Commit updated data.json
         uses: stefanzweifel/git-auto-commit-action@v5
