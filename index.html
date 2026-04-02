@@ -382,7 +382,10 @@
     }
 
     if (startBtn) {
-        startBtn.addEventListener('click', launch);
+        startBtn.addEventListener('click', function () {
+            localStorage.setItem('gp_audio_ok', '1');
+            launch();
+        });
     }
 
 })();
