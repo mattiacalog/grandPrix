@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python skills/ui-ux-pro-max/scripts/search.py \"sports racing dashboard dark telemetry HUD data visualization\" --design-system -p \"Grand Prix\")",
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"sports racing dashboard dark telemetry HUD data visualization\" --design-system -p \"Grand Prix\")",
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"animation entrance splash screen racing\" --domain ux)",
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"dark mode racing sports HUD telemetry\" --domain style)"
+    ]
+  }
+}

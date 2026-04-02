@@ -1,0 +1,245 @@
+"""
+Scarica le icone dei gruppi e genera data.json con la struttura corretta.
+Eseguire una volta sola (o quando si aggiungono nuovi gruppi).
+"""
+import urllib.request
+import json
+import os
+
+ICONS_DIR = os.path.join(os.path.dirname(__file__), "icons")
+DATA_PATH = os.path.join(os.path.dirname(__file__), "data", "data.json")
+os.makedirs(ICONS_DIR, exist_ok=True)
+
+# ─── DATI GRUPPI ─────────────────────────────────────────────────────────────
+GROUPS = [
+    {
+        "id": "achivieneaprenderlo",
+        "name": "A chi viene a prenderlo, lo regalo – Roma e dintorni",
+        "url": "https://www.facebook.com/groups/1048313410496721",
+        "color": "#e63946",   # rosso acceso — nostro gruppo
+        "highlight": True,
+        "img": "https://scontent-mxp2-1.xx.fbcdn.net/v/t39.30808-6/577545810_122147637236854250_6325490742694230629_n.jpg?stp=dst-jpg_s720x720_tt6&_nc_cat=111&ccb=1-7&_nc_sid=25d718&_nc_ohc=VbwI-H2WcDIQ7kNvwEV8StC&_nc_oc=AdrFa1c0lZGlzyIYQozQ77xAweYzN3p35p86OwU4scll0qV0TK8zdvPxfRjb-S7TJbc&_nc_zt=23&_nc_ht=scontent-mxp2-1.xx&_nc_gid=sDtxZZwBwncmtfyBhHN1_w&_nc_ss=7a3a8&oh=00_Af3xFfTlZCRga2NRCregdca7jBeETfl2LuaNPR5LZxH_-Q&oe=69D2DF17",
+    },
+    {
+        "id": "teloregaloroma",
+        "name": "Te lo regalo se vieni a prenderlo - Roma e dintorni",
+        "url": "https://www.facebook.com/groups/teloregaloroma",
+        "color": "#4361ee",
+        "img": "https://scontent-mxp2-1.xx.fbcdn.net/v/t39.30808-6/575668136_10163405709029395_7733865032295223421_n.png?stp=dst-jpg_s480x480_tt6&_nc_cat=101&ccb=1-7&_nc_sid=25d718&_nc_ohc=51TV4_CZW9sQ7kNvwE4X7W2&_nc_oc=Adrj_UsJhgQhRZb3KygT4aJ7CXo1MeyjdomBPVy1l4neY07QRdTJjCcxV_92K0UINN0&_nc_zt=23&_nc_ht=scontent-mxp2-1.xx&_nc_gid=1MIHyYpgFs6BXHLcQkGONA&_nc_ss=7a3a8&oh=00_Af04yIuIKlGCHk0PnchsHMjP19MeGUn_TgYIpqr_2ezihA&oe=69D2A70B",
+    },
+    {
+        "id": "teloregaloroma_1782",
+        "name": "Te lo regalo se vieni a prenderlo - Roma",
+        "url": "https://www.facebook.com/groups/1782277075337038",
+        "color": "#3a86ff",
+        "img": "https://scontent-mxp1-1.xx.fbcdn.net/v/t39.30808-6/574089868_10163405711234395_4737166722188726619_n.png?stp=dst-jpg_s960x960_tt6&_nc_cat=106&ccb=1-7&_nc_sid=25d718&_nc_ohc=vocR2HggLrsQ7kNvwE43fa4&_nc_oc=AdqbhdjuUlIr7bFF2xs2I1VCN4RmXn_xM-gmRJtlQxB7hvsMymyMvMwEgf6ejYU9QjE&_nc_zt=23&_nc_ht=scontent-mxp1-1.xx&_nc_gid=NEj9cLq-b0zyR7IMYybeeA&_nc_ss=7a3a8&oh=00_Af3vDt9ouMtbYoJ1gpZ-hHapA0wP47JkyMB4vpA1IP158g&oe=69D2B59C",
+    },
+    {
+        "id": "terzomunicipio",
+        "name": "Te lo regalo nel Terzo municipio di Roma",
+        "url": "https://www.facebook.com/groups/511625936464055",
+        "color": "#f77f00",
+        "img": "https://scontent-mxp1-1.xx.fbcdn.net/v/t1.6435-9/128764310_10223505254809918_2681545568444407754_n.jpg?stp=dst-jpg_s720x720_tt6&_nc_cat=102&ccb=1-7&_nc_sid=25d718&_nc_ohc=i8giEmGSMnoQ7kNvwF-iJdi&_nc_oc=Ado3rq5FBrpBfyJFep7ToAp02v0Due5ms3eMPz0i9_qj9Xn5WPu4p9rza0aE85bewPc&_nc_zt=23&_nc_ht=scontent-mxp1-1.xx&_nc_gid=xQygh099ENkVg7mupHhkqw&_nc_ss=7a3a8&oh=00_Af1o0UK_ntVnzOi_5sadC_uERhizuVcZ2NaMLhLSzilKJQ&oe=69F4652E",
+    },
+    {
+        "id": "ostia",
+        "name": "TE LO REGALO A OSTIA",
+        "url": "https://www.facebook.com/groups/teloregaloaostia2",
+        "color": "#06d6a0",
+        "img": "https://scontent-mxp2-1.xx.fbcdn.net/v/t1.6435-9/79849074_2510762312496855_6634045788647325696_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=25d718&_nc_ohc=cMKf_M7IqaQQ7kNvwH4GG4N&_nc_oc=AdrkdNtgmV18deQ3FXlyA02-dmPwn_gOofA36zKkyu_ofhN9ah8lkfMRdKg-mR_oUD0&_nc_zt=23&_nc_ht=scontent-mxp2-1.xx&_nc_gid=JReuCsu-0lPc68jBLS8q7Q&_nc_ss=7a3a8&oh=00_Af3NDk42hhkrtPYkFAzAkhmXDxSjG3RmY_cGFBCkSlHKaQ&oe=69F44C3B",
+    },
+    {
+        "id": "romaprovincia_632",
+        "name": "Te lo regalo, se vieni a prenderlo ROMA e Provincia",
+        "url": "https://www.facebook.com/groups/632312010245152",
+        "color": "#8338ec",
+        "img": "https://scontent-mxp1-1.xx.fbcdn.net/v/t39.30808-6/465790044_10235510293525086_5020628739714652153_n.jpg?stp=dst-jpg_p480x480_tt6&_nc_cat=103&ccb=1-7&_nc_sid=25d718&_nc_ohc=BCvHJqwmB6QQ7kNvwEs-00H&_nc_oc=AdrF33i3P1PLafRZ1ZiGU6rMNjLr0P4mHrAWQgDAPwKwjuodT052xSdDBa3LjjVCyRs&_nc_zt=23&_nc_ht=scontent-mxp1-1.xx&_nc_gid=19Q0RMZuOrhBVxCanMQpqg&_nc_ss=7a3a8&oh=00_Af1MrsG4B9vY5FdZGLFR-vQiFfKg7Rlpukht_rUsiqJ_Rg&oe=69D2B84A",
+    },
+    {
+        "id": "romaweekend",
+        "name": "Te lo regalo se te lo vieni a prendere a Roma nel weekend",
+        "url": "https://www.facebook.com/groups/870151693714718",
+        "color": "#ff006e",
+        "img": "https://scontent-mxp1-1.xx.fbcdn.net/v/t39.30808-6/561631054_1360799805561826_8548597101201377940_n.jpg?stp=dst-jpg_s720x720_tt6&_nc_cat=1&ccb=1-7&_nc_sid=25d718&_nc_ohc=FzGTa58WdbwQ7kNvwG_P-jG&_nc_oc=Adqn4rL9Uvf3vdoFSPNmeiDO3FbhT9F9kcA5XpWKSIhT8XMvOzfKBFG7j5RerPowQnc&_nc_zt=23&_nc_ht=scontent-mxp1-1.xx&_nc_gid=0pEcfM5U8tHP9wy6eGHuzg&_nc_ss=7a3a8&oh=00_Af0LI9gSMmn2ycUOVAhnMgRWg4XS0mVpan8HXXWo804Skw&oe=69D2D175",
+    },
+    {
+        "id": "romalazio",
+        "name": "Te lo regalo se vieni a prenderlo - Roma e Lazio",
+        "url": "https://www.facebook.com/groups/regaloromalazio",
+        "color": "#fb5607",
+        "img": "https://scontent-mxp2-1.xx.fbcdn.net/v/t1.6435-9/118509471_10220565360236608_1452093414022820543_n.jpg?stp=dst-jpg_p480x480_tt6&_nc_cat=105&ccb=1-7&_nc_sid=25d718&_nc_ohc=qVAbvtbagTwQ7kNvwFTODyO&_nc_oc=AdonyslVbNxUsq4VwQUVE7v367VCfIzUh_pQKZp1G_F4hb8J4DNMv_CvJ5gNUanfP1I&_nc_zt=23&_nc_ht=scontent-mxp2-1.xx&_nc_gid=pVY_5aaNpNj9H0BCtQqY6Q&_nc_ss=7a3a8&oh=00_Af2STQM2BL7_pv7m-W5abzDKkD9D1XtcbC-eV5SQBTkjDw&oe=69F4786F",
+    },
+    {
+        "id": "ottavia",
+        "name": "Te lo regalo a Ottavia e dintorni",
+        "url": "https://www.facebook.com/groups/1161334544071536",
+        "color": "#ffbe0b",
+        "img": "https://scontent-mxp2-1.xx.fbcdn.net/v/t1.6435-9/83814308_1337494016454011_2455284695470964736_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=25d718&_nc_ohc=ObfTE0XFgTIQ7kNvwH5SjzC&_nc_oc=AdpNx-AYnqO6MEvg3UOPWflmWIayI6bNyBgVx6VcG8TQGsvCaCAx7WqvXcycadb2crE&_nc_zt=23&_nc_ht=scontent-mxp2-1.xx&_nc_gid=WijNf8aYwjt8yNk775mhLw&_nc_ss=7a3a8&oh=00_Af0OMFiMZHXIxR8uWiELKfx_rxV3pSLyWAwuj6PVrusuXg&oe=69F47B35",
+    },
+    {
+        "id": "regaliamo",
+        "name": "RegaliAmo Roma e dintorni",
+        "url": "https://www.facebook.com/groups/1676552915919346",
+        "color": "#80b918",
+        "img": "https://scontent-mxp2-1.xx.fbcdn.net/v/t39.30808-6/657919439_3535019113322502_2909487633446960255_n.jpg?stp=dst-jpg_s720x720_tt6&_nc_cat=105&ccb=1-7&_nc_sid=25d718&_nc_ohc=MAQ6iuQpwSoQ7kNvwETMbfZ&_nc_oc=Adr3A15XL61Ur3cugFxYsOYsO4cUL53pfJ_wCetugsPEtE6rckwW_H2GB8_-BzlmbEA&_nc_zt=23&_nc_ht=scontent-mxp2-1.xx&_nc_gid=8xnipWOx14LllhgZlmx3sQ&_nc_ss=7a3a8&oh=00_Af2veXKZzVNZqFdKHnUaaRLuoX_U1EQs8DzsY63pOx-djw&oe=69D2B413",
+    },
+    {
+        "id": "lazio",
+        "name": "Te lo regalo se te lo vieni a prendere - LAZIO",
+        "url": "https://www.facebook.com/groups/207795302689686",
+        "color": "#0077b6",
+        "img": "https://scontent-mxp2-1.xx.fbcdn.net/v/t39.30808-6/466683753_10234732113827146_3713868190951625325_n.jpg?stp=dst-jpg_s720x720_tt6&_nc_cat=101&ccb=1-7&_nc_sid=25d718&_nc_ohc=NFB5FOXReawQ7kNvwHOQg31&_nc_oc=Adqri_P2bDS5gIVjEogT4mASsUVAsOIF5PwOV32eIzPUOZpEFuZgDUVEFCFhovVcKFE&_nc_zt=23&_nc_ht=scontent-mxp2-1.xx&_nc_gid=_iUFlzI1pNM9_2xqeSYaRw&_nc_ss=7a3a8&oh=00_Af2tM3wUpH5wLB00RrJkKGlYenFftYpXhI0_WDX_ehAarQ&oe=69D2CB7E",
+    },
+    {
+        "id": "torpigna",
+        "name": "Te lo regalo se vieni a prendertelo a Tor Pigna",
+        "url": "https://www.facebook.com/groups/teloregaloatorpigna",
+        "color": "#e9c46a",
+        "img": "https://scontent-mxp1-1.xx.fbcdn.net/v/t1.6435-9/42987174_2048499371868288_9127565597247275008_n.jpg?stp=dst-jpg_s720x720_tt6&_nc_cat=107&ccb=1-7&_nc_sid=25d718&_nc_ohc=xc8JWZCwIloQ7kNvwFv2eHW&_nc_oc=Adptd37rq1yFiCO0B4S3cDMPAeVlkYqQy0jBsRJX4Js_r1AN7iPaO2qlR9Ul6e567l0&_nc_zt=23&_nc_ht=scontent-mxp1-1.xx&_nc_gid=nT3pDKDtZw9f8EiL4mp_0g&_nc_ss=7a3a8&oh=00_Af2q9OyN6feE_Isxfa1JR2_Qr5PowXHTmdJ6SbGnilMqxw&oe=69F4927E",
+    },
+    {
+        "id": "teloregaloaroma",
+        "name": "TE LO REGALO A ROMA",
+        "url": "https://www.facebook.com/groups/720527735059755",
+        "color": "#e76f51",
+        "img": "https://scontent-mxp2-1.xx.fbcdn.net/v/t39.30808-6/536607073_10238565532540470_7244289095835231328_n.jpg?stp=dst-jpg_s720x720_tt6&_nc_cat=111&ccb=1-7&_nc_sid=25d718&_nc_ohc=kzVXk7CEyDQQ7kNvwGMe8UK&_nc_oc=Adr1NcWl_cYZaiL__m9NHeIB0cGJ1vZVd9KyCTzP_JUiHXqiJRkJ2vV-5sdJlEVZn-k&_nc_zt=23&_nc_ht=scontent-mxp2-1.xx&_nc_gid=zYc_t2LHdEiUzOe3lRFJNw&_nc_ss=7a3a8&oh=00_Af3HW-uZ_mEOH15ez_eebys4U6MsnGTosH4q0Pz-uy6Tiw&oe=69D2E1BD",
+    },
+    {
+        "id": "nonlobutto",
+        "name": "NON LO BUTTO, TE LO REGALO (LAZIO)",
+        "url": "https://www.facebook.com/groups/209428462531883",
+        "color": "#2d6a4f",
+        "img": "https://scontent-mxp1-1.xx.fbcdn.net/v/t39.30808-6/387726709_122107671458062593_2530871328580880280_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=25d718&_nc_ohc=nJe-AQcH5Y0Q7kNvwHPzibg&_nc_oc=Adp5nw4Kln5bh7poVmbklz1ycZ0p6jDNXtHaUZlcmlLzHQLmfv625Zij2sL9yfp9uk8&_nc_zt=23&_nc_ht=scontent-mxp1-1.xx&_nc_gid=RenDOspWvpGzrS1j7u1NUw&_nc_ss=7a3a8&oh=00_Af0YWi8YT34xFmVn9D9sIAMwM852plhnMGW-XfQxLESZCA&oe=69D2DA9A",
+    },
+    {
+        "id": "regalorisuso",
+        "name": "Regalo Riuso Riciclo ...in allegria",
+        "url": "https://www.facebook.com/groups/430600883705133",
+        "color": "#a8dadc",
+        "img": "https://scontent-mxp2-1.xx.fbcdn.net/v/t39.30808-6/268437948_10223753158031393_5026902306863317719_n.jpg?stp=dst-jpg_s720x720_tt6&_nc_cat=105&ccb=1-7&_nc_sid=25d718&_nc_ohc=XbrNZsIo4yEQ7kNvwE3n75N&_nc_oc=Adpb8gcBfJjw0NU5pd2Zlafy4qLetrDD5pIP8KL_jsTfb_51QXOcLRazH0p0fPShaeM&_nc_zt=23&_nc_ht=scontent-mxp2-1.xx&_nc_gid=i0AGVZapCn8zSSdCT5PMNA&_nc_ss=7a3a8&oh=00_Af2i3Uhya7cHlx-zdeHvP0qG_4vHs546-YCGhukC-hiWhg&oe=69D2D2A6",
+    },
+    {
+        "id": "romalaziotutto",
+        "name": "Te lo regalo se te lo vieni a prendere a Roma e tutto Lazio",
+        "url": "https://www.facebook.com/groups/384263265452457",
+        "color": "#c77dff",
+        "img": "https://scontent-mxp2-1.xx.fbcdn.net/v/t39.30808-6/559128503_1904708963720671_8823052341094416928_n.jpg?stp=dst-jpg_s480x480_tt6&_nc_cat=109&ccb=1-7&_nc_sid=25d718&_nc_ohc=cl-WEsnnXRsQ7kNvwHn00sx&_nc_oc=AdpspDVKJS1OfS5Axv-GunL1xjxURBoHKzkKDX7hc5_PNeB3IDWMxDlnQVJtKse6l0w&_nc_zt=23&_nc_ht=scontent-mxp2-1.xx&_nc_gid=tyDsy-IgMrLVIhWklDtIYQ&_nc_ss=7a3a8&oh=00_Af3DbRnvovg9iZ3BJJt2r7D6zSn3omg_V5VPS7YmVaEeLg&oe=69D2EFE9",
+    },
+    {
+        "id": "viterbo",
+        "name": "Te lo regalo Viterbo",
+        "url": "https://www.facebook.com/groups/452118458297847",
+        "color": "#48cae4",
+        "img": "https://scontent-mxp2-1.xx.fbcdn.net/v/t39.30808-6/466418650_10233805414534601_5371049515341124914_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=25d718&_nc_ohc=HdUi98BeNYsQ7kNvwHh0G_n&_nc_oc=Adq_79TYlsRwpFt36lfQ8wG32QrOF03ZohOsV52q3ak1HetWvT3ThDNWk6Ri68Ex2yY&_nc_zt=23&_nc_ht=scontent-mxp2-1.xx&_nc_gid=laMdgLprkrMSAU0zQSRGzg&_nc_ss=7a3a8&oh=00_Af2HIJ8ewNN4A8lm0E34eZiUZuhb141OxF0XnDf0kEYm-g&oe=69D2EE9E",
+    },
+    {
+        "id": "nettuno",
+        "name": "TE LO REGALO SE VIENI A PRENDERLO - NETTUNO",
+        "url": "https://www.facebook.com/groups/1525223844401654",
+        "color": "#f4a261",
+        "img": "https://scontent-mxp1-1.xx.fbcdn.net/v/t39.30808-6/462743353_3405476439585432_3065360050967540215_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=25d718&_nc_ohc=mdTNY5_JCVQQ7kNvwHDAf6A&_nc_oc=Adqqm6tgf0JdULjxWZIlEXk38eSgSdCekjkzdCw-DbF0JEydTeQAFUxhxi9jBZqt878&_nc_zt=23&_nc_ht=scontent-mxp1-1.xx&_nc_gid=jYGQIGSUGGI6BvlOhiyYMw&_nc_ss=7a3a8&oh=00_Af0phmYauNSM0OaNdxlWT2l3x30mXd8hG-CoF72X1Mjnxg&oe=69D2D8BE",
+    },
+    {
+        "id": "centocelle",
+        "name": "Regalo Centocelle e Dintorni",
+        "url": "https://www.facebook.com/groups/281554295535883",
+        "color": "#90be6d",
+        "img": "https://scontent-mxp2-1.xx.fbcdn.net/v/t39.30808-6/317089273_449092974034614_8027457383515677641_n.jpg?stp=dst-jpg_s480x480_tt6&_nc_cat=111&ccb=1-7&_nc_sid=25d718&_nc_ohc=IGuc-EKYTbcQ7kNvwGzRwTA&_nc_oc=Adqgj-QqdiipDA1jhDqag78rxNs6q5LuJbpjifaqReCPURoYs7ag9YqWlL_n5GWlVhI&_nc_zt=23&_nc_ht=scontent-mxp2-1.xx&_nc_gid=GJt1GfwRjtJaY5SFKXDTyw&_nc_ss=7a3a8&oh=00_Af0APnP27MWRMmWR3TOB_Q68YbgnrWWOpr28aZ31FdCWgA&oe=69D2DCC1",
+    },
+    {
+        "id": "romaweekend2",
+        "name": "Te lo regalo se te lo vieni a prendere a Roma nel week end",
+        "url": "https://www.facebook.com/groups/756684261060296",
+        "color": "#d62828",
+        "img": "https://scontent-mxp1-1.xx.fbcdn.net/v/t39.30808-6/466157791_10232904126336526_2369699227205046222_n.jpg?_nc_cat=108&ccb=1-7&_nc_sid=25d718&_nc_ohc=SoON5mktf2EQ7kNvwGrwCw6&_nc_oc=AdoYNgwm3TGJUmofUDLaSp5Ocs6uhGYXf25HI7j9cbeajNohyOLeXebfcOKYmhnfRyQ&_nc_zt=23&_nc_ht=scontent-mxp1-1.xx&_nc_gid=tj2Yf6-mYmMVm9lDuGo58g&_nc_ss=7a3a8&oh=00_Af1FwqMjs7C_tx3d09mIlQuyb7TU8XGkrryUitZ3zyEcpg&oe=69D2DC3D",
+    },
+    {
+        "id": "romaconilcuore",
+        "name": "Te lo regalo con il cuore - Roma e dintorni",
+        "url": "https://www.facebook.com/groups/1764324463810891",
+        "color": "#f72585",
+        "img": "https://scontent-mxp1-1.xx.fbcdn.net/v/t39.30808-6/468204935_10230508356426570_5275770469603384136_n.jpg?stp=dst-jpg_s720x720_tt6&_nc_cat=106&ccb=1-7&_nc_sid=25d718&_nc_ohc=s1ivDYyj8DgQ7kNvwHts4Eu&_nc_oc=AdrbNO-vzbYbQpvDD0NX-b8K04Gd7i2aU-Oq9B-NT1YVYcclSWKd4HQLOklZqEPdb9Y&_nc_zt=23&_nc_ht=scontent-mxp1-1.xx&_nc_gid=8KNWfUGFfH8ir7z6GL12Vg&_nc_ss=7a3a8&oh=00_Af3YH2MgHRLxQ5HCHyH8VrnroCj9XICqqguAzWX9YLk99A&oe=69D2C976",
+    },
+    {
+        "id": "romaprovincia_2997",
+        "name": "Te lo regalo, se vieni a prenderlo ROMA e provincia",
+        "url": "https://www.facebook.com/groups/2997157297257346",
+        "color": "#7209b7",
+        "img": "https://scontent-mxp1-1.xx.fbcdn.net/v/t39.30808-6/462306018_7990369611068322_6245245277343613910_n.jpg?stp=dst-jpg_s720x720_tt6&_nc_cat=102&ccb=1-7&_nc_sid=25d718&_nc_ohc=jX3WjVp0V3sQ7kNvwFckNC9&_nc_oc=AdpSm2-YYw3RFw3zJoAnB6EocYpgE_-IEY7yRnxtnE1baYkeMatjLcXmQUldPIzLkbE&_nc_zt=23&_nc_ht=scontent-mxp1-1.xx&_nc_gid=QDaDVuMXCchB4nTvgwVChA&_nc_ss=7a3a8&oh=00_Af09yyaY124vwyyrjL72NPzqus-sUFdE8yiM0sYYGB9pjA&oe=69D2EC3D",
+    },
+    {
+        "id": "romanord",
+        "name": "Te lo regalo se lo vieni a prendere Roma nord",
+        "url": "https://www.facebook.com/groups/1632338883801431",
+        "color": "#457b9d",
+        "img": "https://scontent-mxp2-1.xx.fbcdn.net/v/t39.30808-6/271206036_1072187096655790_9114695744353021756_n.jpg?stp=dst-jpg_s720x720_tt6&_nc_cat=100&ccb=1-7&_nc_sid=25d718&_nc_ohc=E1TiCHXkeD0Q7kNvwFtq0QU&_nc_oc=AdrqoyfEPvBJEZ7Ztat_CfGcermgJtJKJGrs2R8pSKOEvbAOauhSgRex5FfOhx0b4c4&_nc_zt=23&_nc_ht=scontent-mxp2-1.xx&_nc_gid=F38gWuVJ5w1911WmFmP4Qg&_nc_ss=7a3a8&oh=00_Af2mbjDcHwEwbvooHG0YCbPltWm7xqDByTH8OuBNV3hP3w&oe=69D2F0B8",
+    },
+    {
+        "id": "trastevere",
+        "name": "Te lo regalo Roma: Trastevere, Marconi, Monteverde",
+        "url": "https://www.facebook.com/groups/864133581250528",
+        "color": "#b5838d",
+        "img": "https://scontent-mxp2-1.xx.fbcdn.net/v/t39.30808-6/313985282_109601028627429_4940467432835551620_n.jpg?stp=dst-jpg_s640x640_tt6&_nc_cat=110&ccb=1-7&_nc_sid=25d718&_nc_ohc=y8MzfD3pchYQ7kNvwHrijcl&_nc_oc=AdqXlmTIBrrSXNf9JY-BmMvL3qzaS8iroMgs9LBMT1317JUCQCgA0X_KVseuoBaWHVI&_nc_zt=23&_nc_ht=scontent-mxp2-1.xx&_nc_gid=J5_mjquQS1v6UhsXWNwClA&_nc_ss=7a3a8&oh=00_Af0VCIInncDFCA7FlLL9Dpmq_kDo_lQ8t3qgVS6SgFyk2Q&oe=69D2E5C8",
+    },
+    {
+        "id": "ostia2",
+        "name": "Te lo Regalo, se vieni a prenderlo OSTIA",
+        "url": "https://www.facebook.com/groups/791308374766294",
+        "color": "#52b788",
+        "img": "https://scontent-mxp1-1.xx.fbcdn.net/v/t1.6435-9/122620807_10224225958426057_6329084793578723034_n.jpg?stp=dst-jpg_s720x720_tt6&_nc_cat=108&ccb=1-7&_nc_sid=25d718&_nc_ohc=gn2bwI2RIDsQ7kNvwEhnHFH&_nc_oc=AdrfiEcyjK7mL4c0FEMrt3_FIPSSQp4PZIaiDzv1o28MRIRnhVdSLmVIipYds0btiEI&_nc_zt=23&_nc_ht=scontent-mxp1-1.xx&_nc_gid=ZZQtvJL4U30z0FoCdVnaZg&_nc_ss=7a3a8&oh=00_Af2G-g3KR4sdg7EAExkFUX9345Vr9uz6VsokfJiiXinLYA&oe=69F484CB",
+    },
+    {
+        "id": "municipiov",
+        "name": "Te lo regalo se vieni a prenderlo - Roma Municipio V",
+        "url": "https://www.facebook.com/groups/1936436096583782",
+        "color": "#219ebc",
+        "img": "https://scontent-mxp1-1.xx.fbcdn.net/v/t39.30808-6/467866129_10231037814501924_7078015600843489150_n.jpg?stp=dst-jpg_s960x960_tt6&_nc_cat=107&ccb=1-7&_nc_sid=25d718&_nc_ohc=RXjQhWIRA9UQ7kNvwH1OhT0&_nc_oc=AdqUkcCQe8VziH_LXf5ZD7e86Dg1QRIODF3FGrFL5OOZ-ny9J4jaJr9ljxRQZfWBVEk&_nc_zt=23&_nc_ht=scontent-mxp1-1.xx&_nc_gid=q8U8r1tvsQpafN3oOFyIoQ&_nc_ss=7a3a8&oh=00_Af2pKa9eZpR6AtHxRfAPznxFKOXe6pCD3NHuGW-tAvfuvg&oe=69D2F3F5",
+    },
+    {
+        "id": "ciampino",
+        "name": "Se vieni a prenderlo te lo regalo - Ciampino",
+        "url": "https://www.facebook.com/groups/230107133820164",
+        "color": "#f4d35e",
+        "img": "https://scontent-mxp2-1.xx.fbcdn.net/v/t39.30808-6/465011740_10226176418576972_8089626968673487907_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=25d718&_nc_ohc=pX-uEit8V2QQ7kNvwE9O5zm&_nc_oc=AdppHRcTsHYb-0JkO-VLi8vMi3iQ9DHrfGKnWrC_M5XKVz9nYj1ZDKVFgTrsBILhvmo&_nc_zt=23&_nc_ht=scontent-mxp2-1.xx&_nc_gid=RW5UyYzY_-PFRgLUEib5wg&_nc_ss=7a3a8&oh=00_Af14nsKModxLrlZIl5-G33ebzj7WQuQKM_2H-ltKL-Mjjw&oe=69D2CC1E",
+    },
+    {
+        "id": "monterotondo",
+        "name": "Te lo regalo se vieni a prenderlo Monterotondo e dintorni",
+        "url": "https://www.facebook.com/groups/791135487688782",
+        "color": "#6d6875",
+        "img": "https://scontent-mxp1-1.xx.fbcdn.net/v/t39.30808-6/440389243_6997858626985615_3811413212688973603_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=25d718&_nc_ohc=GFbvJggIujEQ7kNvwFJlWmT&_nc_oc=AdrCP-P-qK0uS3GcJYHaIa4jND79hW5Alm9BHaHl11Bark0-cp6W8wQBltO_eCD-2r4&_nc_zt=23&_nc_ht=scontent-mxp1-1.xx&_nc_gid=dOBpaKlkerwxw3EpZd2pHQ&_nc_ss=7a3a8&oh=00_Af2lNxzM3BGMjUdKMZri321ck_TE74Z82NDv9vvBxKwTyw&oe=69D2F6D0",
+    },
+]
+
+# ─── SCARICA ICONE ───────────────────────────────────────────────────────────
+headers = {"User-Agent": "Mozilla/5.0"}
+for g in GROUPS:
+    dest = os.path.join(ICONS_DIR, f"{g['id']}.jpg")
+    if os.path.exists(dest):
+        print(f"  [skip] {g['id']}.jpg già presente")
+        continue
+    try:
+        req = urllib.request.Request(g["img"], headers=headers)
+        with urllib.request.urlopen(req, timeout=15) as r, open(dest, "wb") as f:
+            f.write(r.read())
+        print(f"  [ok]   {g['id']}.jpg")
+    except Exception as e:
+        print(f"  [err]  {g['id']}: {e}")
+
+# ─── GENERA data.json ────────────────────────────────────────────────────────
+# Rimuoviamo il campo img (non serve nel JSON del sito)
+clean_groups = [{k: v for k, v in g.items() if k != "img"} for g in GROUPS]
+
+# Legge snapshots esistenti se ci sono
+try:
+    with open(DATA_PATH, "r", encoding="utf-8") as f:
+        existing = json.load(f)
+    snapshots = existing.get("snapshots", [])
+except Exception:
+    snapshots = []
+
+output = {"groups": clean_groups, "snapshots": snapshots}
+with open(DATA_PATH, "w", encoding="utf-8") as f:
+    json.dump(output, f, ensure_ascii=False, indent=2)
+
+print(f"\ndata.json aggiornato con {len(clean_groups)} gruppi, {len(snapshots)} snapshot.")
