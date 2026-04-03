@@ -270,6 +270,69 @@ function renderBattleForecast() {
     document.getElementById('bf-car-them').innerHTML = f1Car(themColor);
     const iconThem = document.getElementById('bf-icon-them');
     if (iconThem) iconThem.src = `icons/${targetId}.jpg`;
+
+    // ── Prossimi sorpassi tra TUTTI i gruppi ─────────────────────────────────
+    const nextEl = document.getElementById('bf-next');
+    if (!nextEl) return;
+
+    // Calcola avg 30d per ogni gruppo (su giorni completi)
+    const avgs = {};
+    groups.forEach(g => {
+        const f = getSnapshotBefore(30);
+        avgs[g.id] = f ? absGrowth(g.id, f, toForAvg) / Math.max(1, daysBetween(f, toForAvg)) : 0;
+    });
+
+    // Per ogni coppia (chaser, target) dove chaser è dietro, calcola giorni al sorpasso
+    const predictions = [];
+    for (let i = 0; i < sorted.length; i++) {
+        for (let j = 0; j < i; j++) {
+            const chaser = sorted[i]; // dietro
+            const target = sorted[j]; // davanti
+            const chaserVal = to.data[chaser.id] || 0;
+            const targetVal = to.data[target.id] || 0;
+            const g = targetVal - chaserVal;
+            if (g <= 0) continue;
+            const net = avgs[chaser.id] - avgs[target.id];
+            if (net <= 0) continue;
+            const d = Math.ceil(g / net);
+            predictions.push({ chaser, target, days: d });
+        }
+    }
+
+    // Ordina per giorni crescenti, prendi i 3 più vicini
+    predictions.sort((a, b) => a.days - b.days);
+    const top3 = predictions.slice(0, 3);
+
+    if (top3.length === 0) {
+        nextEl.innerHTML = '';
+        return;
+    }
+
+    const shortName = g => g.name.split(',')[0].trim();
+    const chevSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
+    nextEl.innerHTML = `<div class="bf-next-title">Prossimi sorpassi previsti</div>` +
+        top3.map(p => {
+            const isUsInvolved = p.chaser.id === OUR_ID || p.target.id === OUR_ID;
+            const daysClass = p.days <= 7 ? 'easy' : p.days <= 30 ? 'med' : '';
+            const chaserColor = p.chaser.color || '#E8002D';
+            const targetColor = p.target.color || '#888';
+            return `<div class="bf-next-row${isUsInvolved ? ' is-us-involved' : ''}">
+                <div class="bf-next-chaser-side">
+                    <img class="bf-next-icon" src="icons/${p.chaser.id}.jpg" alt="">
+                    <span class="bf-next-name${p.chaser.id === OUR_ID ? ' is-us' : ''}">${shortName(p.chaser)}</span>
+                </div>
+                <div class="bf-next-center">
+                    <div class="bf-next-car-chaser">${f1Car(chaserColor)}</div>
+                    <div class="bf-next-chevron">${chevSvg}</div>
+                    <div class="bf-next-car-target">${f1Car(targetColor)}</div>
+                </div>
+                <div class="bf-next-target-side">
+                    <span class="bf-next-name${p.target.id === OUR_ID ? ' is-us' : ''}">${shortName(p.target)}</span>
+                    <img class="bf-next-icon" src="icons/${p.target.id}.jpg" alt="">
+                </div>
+                <span class="bf-next-days ${daysClass}">${p.days}g</span>
+            </div>`;
+        }).join('');
 }
 
 function renderHeroStats() {
