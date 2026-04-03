@@ -492,6 +492,128 @@ body {
     transition: width .6s ease;
 }
 .diff-easy { background: var(--green); box-shadow: 0 0 6px rgba(48,209,88,.5); }
+
+/* ─── BF NEXT OVERTAKES ─── */
+.bf-next {
+    border-top: 1px solid rgba(255,255,255,.06);
+    padding: 8px 12px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.bf-next-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: .42rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 3px;
+}
+.bf-next-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: rgba(255,255,255,.02);
+    border: 1px solid rgba(255,255,255,.05);
+    border-radius: 3px;
+    padding: 4px 8px;
+    overflow: hidden;
+    animation: bf-next-in .35s ease both;
+}
+.bf-next-row:nth-child(2) { animation-delay: .05s; }
+.bf-next-row:nth-child(3) { animation-delay: .10s; }
+.bf-next-row:nth-child(4) { animation-delay: .15s; }
+@keyframes bf-next-in {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+.bf-next-row.is-us-involved {
+    border-color: rgba(255,214,10,.18);
+    background: rgba(255,214,10,.04);
+}
+
+/* Lato chaser */
+.bf-next-chaser-side {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex: 1;
+    min-width: 0;
+}
+.bf-next-icon {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,.12);
+}
+.bf-next-name {
+    font-size: .54rem;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+.bf-next-name.is-us { color: var(--gold); }
+
+/* Centro: macchine + freccia */
+.bf-next-center {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+    padding: 0 6px;
+    position: relative;
+}
+.bf-next-car-chaser { display: flex; align-items: center; }
+.bf-next-car-target { display: flex; align-items: center; }
+.bf-next-chevron {
+    display: flex;
+    align-items: center;
+    animation: bf-chev-slide .7s ease-in-out infinite alternate;
+}
+@keyframes bf-chev-slide {
+    from { transform: translateX(-2px); opacity: .5; }
+    to   { transform: translateX(2px);  opacity: 1; }
+}
+
+/* Lato target */
+.bf-next-target-side {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-end;
+}
+
+/* Badge giorni */
+.bf-next-days {
+    font-family: 'Orbitron', sans-serif;
+    font-size: .5rem;
+    font-weight: 900;
+    padding: 2px 6px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin-left: 6px;
+    background: rgba(232,0,45,.15);
+    color: var(--accent);
+    border: 1px solid rgba(232,0,45,.3);
+}
+.bf-next-days.easy {
+    background: rgba(48,209,88,.12);
+    color: var(--green);
+    border-color: rgba(48,209,88,.3);
+}
+.bf-next-days.med {
+    background: rgba(255,214,10,.12);
+    color: var(--gold);
+    border-color: rgba(255,214,10,.3);
+}
 .diff-med  { background: var(--gold);  box-shadow: 0 0 6px rgba(255,214,10,.4); }
 .diff-hard { background: var(--accent);box-shadow: 0 0 6px rgba(232,0,45,.4); }
 .bf-diff-lbl {
