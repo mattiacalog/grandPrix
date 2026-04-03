@@ -294,10 +294,11 @@ function renderHeroStats() {
     const fromOT = getSnapshotBefore(overtakeDays);
     const overtakes = countOvertakes(OUR_ID, fromOT, to);
 
-    // Media giornaliera
+    // Media giornaliera — usa solo giorni completi (fino a ieri)
     const avgDays = +document.getElementById('hero-avg-period').value;
     const fromAvg = getSnapshotBefore(avgDays);
-    const avgGrowth = fromAvg ? (absGrowth(OUR_ID, fromAvg, to) / daysBetween(fromAvg, to)).toFixed(1) : null;
+    const toAvg   = getLastSnapshotYesterday() || to;
+    const avgGrowth = fromAvg ? (absGrowth(OUR_ID, fromAvg, toAvg) / Math.max(1, daysBetween(fromAvg, toAvg))).toFixed(1) : null;
 
     const delta1   = absGrowth(OUR_ID, from1, to);
     const delta7   = absGrowth(OUR_ID, from7, to);
@@ -337,9 +338,10 @@ function renderModal(days) {
         b.style.color         = isActive ? '#fff'    : '#7070a0';
     });
 
-    const to   = latestSnap();
-    const from = getSnapshotBefore(days);
-    const body = document.getElementById('modal-body');
+    const to      = latestSnap();
+    const toAvg   = getLastSnapshotYesterday() || to; // per medie: solo giorni completi
+    const from    = getSnapshotBefore(days);
+    const body    = document.getElementById('modal-body');
 
     if (!from) {
         body.innerHTML = `<div style="text-align:center;padding:40px 20px;color:#7070a0;font-family:'Inter',sans-serif;font-size:.88rem;line-height:1.6;">
@@ -353,7 +355,7 @@ function renderModal(days) {
     body.innerHTML = [
         buildSection('Crescita assoluta', 'Quanti iscritti ha guadagnato ogni gruppo nel periodo', from, to, 'abs'),
         buildSection('Crescita %', 'Di quanto è cresciuto ogni gruppo rispetto alla sua dimensione', from, to, 'pct'),
-        buildSection('Media giornaliera', 'Quanti iscritti guadagna ogni gruppo in media al giorno', from, to, 'avg'),
+        buildSection('Media giornaliera', 'Quanti iscritti guadagna ogni gruppo in media al giorno', from, toAvg, 'avg'),
         buildSection('Crescita minore', 'I gruppi che hanno guadagnato meno iscritti nel periodo', from, to, 'worst'),
         buildSection('Record giornaliero', 'Il miglior singolo giorno di sempre per ogni gruppo', from, to, 'bestday'),
     ].join('');
