@@ -70,35 +70,41 @@ function animateCount(el, to, duration) {
 
 function latestSnap() { return snapshots[snapshots.length - 1]; }
 
-/** Returns the first snapshot of today (calendar day of the latest snapshot), or null */
-function getFirstSnapshotToday() {
+/** Returns the last snapshot of yesterday (reference for today's delta) */
+function getLastSnapshotYesterday() {
     if (snapshots.length < 2) return null;
     const todayStr = snapDateStr(snapshots[snapshots.length - 1].date);
-    // Trova il primo snapshot della giornata corrente
-    const first = snapshots.find(s => snapDateStr(s.date) === todayStr);
-    const latest = snapshots[snapshots.length - 1];
-    // Se il primo è lo stesso dell'ultimo (unico snapshot oggi), usa l'ultimo di ieri
-    if (!first || first === latest) {
-        for (let i = snapshots.length - 2; i >= 0; i--) {
-            if (snapDateStr(snapshots[i].date) !== todayStr) return snapshots[i];
-        }
-        return null;
+    // Scorre dal penultimo in su e prende il primo con data diversa da oggi
+    for (let i = snapshots.length - 2; i >= 0; i--) {
+        if (snapDateStr(snapshots[i].date) !== todayStr) return snapshots[i];
     }
-    return first;
+    return null;
 }
 
-/** Returns the closest snapshot at least daysAgo before the latest, or null */
+/** Returns the closest snapshot at least daysAgo before the latest, or null.
+ *  Uses last snapshot of each day to avoid intra-day distortion. */
 function getSnapshotBefore(daysAgo) {
     if (snapshots.length < 2) return null;
-    const latest = parseDate(snapshots[snapshots.length - 1].date);
+    const latestDateStr = snapDateStr(snapshots[snapshots.length - 1].date);
+    const [ly, lm, ld] = latestDateStr.split('-').map(Number);
+    const latest = new Date(ly, lm-1, ld);
     const target = new Date(latest);
     target.setDate(target.getDate() - daysAgo);
-    let best = null;
-    for (let i = 0; i < snapshots.length - 1; i++) {
-        if (parseDate(snapshots[i].date) <= target) best = snapshots[i];
+
+    // Raggruppa per giorno, prende l'ultimo snapshot di ogni giorno
+    const byDay = {};
+    for (const s of snapshots) {
+        const d = snapDateStr(s.date);
+        byDay[d] = s;
     }
-    // If no snapshot old enough, return the oldest available (so we always show something)
-    return best ?? (snapshots.length > 1 ? snapshots[0] : null);
+    const days = Object.keys(byDay).sort();
+
+    let best = null;
+    for (const d of days) {
+        const [y, m, day] = d.split('-').map(Number);
+        if (new Date(y, m-1, day) <= target) best = byDay[d];
+    }
+    return best ?? byDay[days[0]];
 }
 
 function absGrowth(groupId, from, to) {
@@ -115,7 +121,12 @@ function pctGrowth(groupId, from, to) {
 }
 
 function daysBetween(s1, s2) {
-    return (parseDate(s2.date) - parseDate(s1.date)) / 86400000;
+    // Usa solo la parte data (senza ora) per evitare frazioni di giorno
+    const d1 = snapDateStr(s1.date).split('-').map(Number);
+    const d2 = snapDateStr(s2.date).split('-').map(Number);
+    const t1 = new Date(d1[0], d1[1]-1, d1[2]);
+    const t2 = new Date(d2[0], d2[1]-1, d2[2]);
+    return (t2 - t1) / 86400000;
 }
 
 function avgDailyGrowth(groupId, from, to) {
@@ -126,12 +137,21 @@ function avgDailyGrowth(groupId, from, to) {
     return g / days;
 }
 
-/** Best single day: max daily delta across all snapshots (ignores from/to, uses full history) */
+/** Best single day: max daily delta using last snapshot per day vs last snapshot of previous day */
 function bestDayGrowth(groupId) {
+    // Raggruppa snapshot per giorno, prende l'ultimo di ogni giorno
+    const byDay = {};
+    for (const s of snapshots) {
+        const d = snapDateStr(s.date);
+        byDay[d] = s; // sovrascrive → tiene l'ultimo della giornata
+    }
+    const days = Object.keys(byDay).sort();
     let best = null, bestDate = null;
-    for (let i = 1; i < snapshots.length; i++) {
-        const d = (snapshots[i].data[groupId] || 0) - (snapshots[i-1].data[groupId] || 0);
-        if (d > 0 && (best === null || d > best)) { best = d; bestDate = snapshots[i].date; }
+    for (let i = 1; i < days.length; i++) {
+        const prev = byDay[days[i-1]];
+        const curr = byDay[days[i]];
+        const d = (curr.data[groupId] || 0) - (prev.data[groupId] || 0);
+        if (d > 0 && (best === null || d > best)) { best = d; bestDate = days[i]; }
     }
     return { val: best, date: bestDate };
 }
@@ -180,6 +200,13 @@ function countOvertakes(groupId, from, to) {
 // ─── BATTLE FORECAST ─────────────────────────────────────────────────────────
 
 function renderBattleForecast() {
+    // Per la media usiamo l'ultimo snapshot di ieri (giorno completo)
+    // così la giornata parziale di oggi non distorce la media
+    const todayStr = snapDateStr(latestSnap().date);
+    let toForAvg = latestSnap();
+    for (let i = snapshots.length - 1; i >= 0; i--) {
+        if (snapDateStr(snapshots[i].date) !== todayStr) { toForAvg = snapshots[i]; break; }
+    }
     const to      = latestSnap();
     const from30  = getSnapshotBefore(30);
     const ranks   = getRankAt(to);
@@ -209,9 +236,10 @@ function renderBattleForecast() {
     const themVal     = to.data[targetId]  || 0;
     const gap         = themVal - ourVal;
 
-    // Avg daily growth over 30d
-    const ourAvg  = from30 ? (absGrowth(OUR_ID,   from30, to) / Math.max(1, daysBetween(from30, to))) : 0;
-    const themAvg = from30 ? (absGrowth(targetId,  from30, to) / Math.max(1, daysBetween(from30, to))) : 0;
+    // Avg daily growth over 30d — usa toForAvg (ultimo snapshot di ieri, giorno completo)
+    // per non distorcere la media con una giornata parziale
+    const ourAvg  = from30 ? (absGrowth(OUR_ID,   from30, toForAvg) / Math.max(1, daysBetween(from30, toForAvg))) : 0;
+    const themAvg = from30 ? (absGrowth(targetId,  from30, toForAvg) / Math.max(1, daysBetween(from30, toForAvg))) : 0;
     const netGain = ourAvg - themAvg;
 
     // Days to catch up
@@ -246,7 +274,7 @@ function renderBattleForecast() {
 
 function renderHeroStats() {
     const to      = latestSnap();
-    const from1   = getFirstSnapshotToday(); // primo snapshot della giornata
+    const from1   = getLastSnapshotYesterday(); // ultimo snapshot di ieri = base per delta di oggi
     const from7   = getSnapshotBefore(7);
     const from30  = getSnapshotBefore(30);
     const from365 = getSnapshotBefore(365);
@@ -525,13 +553,21 @@ function render(index) {
     const leaderVal = counts[sorted[0].id] || 0;
     const isLast    = index === snapshots.length - 1;
 
+    // Snapshot di riferimento: ultimo di ieri (per delta giornaliero corretto)
+    const todayStrRender = snapDateStr(snap.date);
+    let refSnap = null;
+    for (let i = index - 1; i >= 0; i--) {
+        if (snapDateStr(snapshots[i].date) !== todayStrRender) { refSnap = snapshots[i]; break; }
+    }
+    if (!refSnap && index > 0) refSnap = snapshots[index - 1];
+
     // Fastest lap: group with highest positive daily delta
     // DNF: group with lowest daily delta (most negative or least growth)
     let fastestId = null, fastestDelta = 0;
     let dnfId = null, dnfDelta = Infinity;
-    if (index > 0) {
+    if (refSnap) {
         groups.forEach(g => {
-            const d = (counts[g.id] || 0) - (snapshots[index - 1].data[g.id] || 0);
+            const d = (counts[g.id] || 0) - (refSnap.data[g.id] || 0);
             if (d > fastestDelta) { fastestDelta = d; fastestId = g.id; }
             if (d < dnfDelta) { dnfDelta = d; dnfId = g.id; }
         });
@@ -542,12 +578,7 @@ function render(index) {
         const pct = maxVal > 0 ? (val / maxVal) * 100 : 0;
 
         let delta = null;
-        if (index > 0) {
-            const todayStr = snapDateStr(snap.date);
-            const firstToday = snapshots.find(s => snapDateStr(s.date) === todayStr);
-            const fromSnap = (firstToday && firstToday !== snap) ? firstToday : snapshots[index - 1];
-            delta = val - (fromSnap.data[g.id] || 0);
-        }
+        if (refSnap) delta = val - (refSnap.data[g.id] || 0);
 
         const row = document.getElementById(`row-${g.id}`);
 
@@ -673,10 +704,17 @@ function updateTicker(snap, sorted, counts, index) {
     const gap        = leaderVal2 - ourVal;
 
     let fastestName = '—', fastestVal = 0;
-    if (index > 0) {
+    // Usa l'ultimo snapshot di ieri come riferimento per il delta giornaliero
+    const todayStrTicker = snapDateStr(snap.date);
+    let refSnapTicker = null;
+    for (let i = index - 1; i >= 0; i--) {
+        if (snapDateStr(snapshots[i].date) !== todayStrTicker) { refSnapTicker = snapshots[i]; break; }
+    }
+    if (!refSnapTicker && index > 0) refSnapTicker = snapshots[index - 1];
+    if (refSnapTicker) {
         let maxD = 0;
         groups.forEach(g => {
-            const d = (counts[g.id] || 0) - (snapshots[index - 1].data[g.id] || 0);
+            const d = (counts[g.id] || 0) - (refSnapTicker.data[g.id] || 0);
             if (d > maxD) { maxD = d; fastestName = g.name.split(',')[0].trim(); fastestVal = d; }
         });
     }
@@ -777,21 +815,27 @@ const glowPlugin = {
 
 async function buildChart() {
     const ctx    = document.getElementById('trend-chart').getContext('2d');
-    const labels = snapshots.map(s => fmtDate(s.date));
+
+    // Deduplica per giorno: un punto per giorno (ultimo snapshot del giorno)
+    const byDay = {};
+    for (const s of snapshots) { byDay[snapDateStr(s.date)] = s; }
+    const chartSnaps = Object.keys(byDay).sort().map(d => byDay[d]);
+
+    const labels = chartSnaps.map(s => fmtDate(s.date));
 
     // Preload all icon canvases (saved globally for reuse)
     window._iconCanvases = await Promise.all(groups.map(g => makeIconCanvas(g)));
     const iconCanvases = window._iconCanvases;
 
-    const lastIdx = snapshots.length - 1;
+    const lastIdx = chartSnaps.length - 1;
 
     const datasets = groups.map((g, i) => {
         const isOurs = g.id === OUR_ID;
         // Icona solo all'ultimo punto, piccolo cerchio sugli altri
-        const pointStyles = snapshots.map((_, si) => si === lastIdx ? iconCanvases[i] : 'circle');
-        const pointRadii  = snapshots.map((_, si) => si === lastIdx ? (isOurs ? 16 : 11) : (isOurs ? 3 : 2));
-        const pointHover  = snapshots.map((_, si) => si === lastIdx ? (isOurs ? 20 : 14) : 4);
-        const absVals = snapshots.map(s => s.data[g.id] || 0);
+        const pointStyles = chartSnaps.map((_, si) => si === lastIdx ? iconCanvases[i] : 'circle');
+        const pointRadii  = chartSnaps.map((_, si) => si === lastIdx ? (isOurs ? 16 : 11) : (isOurs ? 3 : 2));
+        const pointHover  = chartSnaps.map((_, si) => si === lastIdx ? (isOurs ? 20 : 14) : 4);
+        const absVals = chartSnaps.map(s => s.data[g.id] || 0);
         const base    = absVals[0] || 0;
         const relVals = absVals.map(v => v - base);
         return {
@@ -853,9 +897,16 @@ async function buildChart() {
 
 function updateChartLine(index) {
     if (!chart) return;
+    // Mappa l'indice raw snapshots → indice nel chart (deduplicate per giorno)
+    const snapDay = snapDateStr(snapshots[index].date);
+    const chartIdx = chart.data.labels.findIndex((lbl, i) => {
+        // Confronta la label formattata con la data dello snapshot corrente
+        return fmtDate(snapDay) === lbl;
+    });
+    const ci = chartIdx >= 0 ? chartIdx : chart.data.labels.length - 1;
     chart.data.datasets.forEach(ds => {
-        ds.pointRadius = ds.data.map((_, i) => i === index ? 6 : 2);
-        ds.pointBackgroundColor = ds.data.map((_, i) => i === index ? ds.borderColor : 'transparent');
+        ds.pointRadius = ds.data.map((_, i) => i === ci ? 6 : 2);
+        ds.pointBackgroundColor = ds.data.map((_, i) => i === ci ? ds.borderColor : 'transparent');
     });
     chart.update('none');
 }
@@ -975,7 +1026,11 @@ async function init() {
     function filterChartByDays(days) {
         const latest = parseDate(snapshots[snapshots.length - 1].date);
         const cutoff = days === 0 ? null : new Date(latest.getTime() - days * 86400000);
-        const filtered = cutoff ? snapshots.filter(s => parseDate(s.date) >= cutoff) : snapshots;
+        const raw = cutoff ? snapshots.filter(s => parseDate(s.date) >= cutoff) : snapshots;
+        // Deduplica per giorno: un punto per giorno (ultimo snapshot del giorno)
+        const byDay2 = {};
+        for (const s of raw) { byDay2[snapDateStr(s.date)] = s; }
+        const filtered = Object.keys(byDay2).sort().map(d => byDay2[d]);
         const lastIdx2 = filtered.length - 1;
 
         chart.data.labels = filtered.map(s => fmtDate(s.date));
