@@ -1,5 +1,5 @@
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
-const DATA_URL = window.DATA_FILE ? `./data/${window.DATA_FILE}` : './data/data.json';
+const DATA_URL = window.DATA_FILE ? `./data/${window.DATA_FILE}` : `./data/data.json?v=${Date.now()}`;
 const BAR_H    = 58;
 const BAR_GAP  = 12;
 // F1 car SVG (top-down view, front faces right)
