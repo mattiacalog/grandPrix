@@ -1024,6 +1024,26 @@ async function init() {
     groups    = data.groups;
     snapshots = data.snapshots;
 
+    // ── ULTIMO AGGIORNAMENTO ─────────────────────────────────────────────────
+    (function () {
+        const el = document.getElementById('last-update-ago');
+        if (!el || !snapshots.length) return;
+        const lastDate = snapshots[snapshots.length - 1].date; // "YYYY-MM-DDTHH:MM"
+        const lastMs = new Date(lastDate.length === 10 ? lastDate + 'T00:00' : lastDate).getTime();
+        function updateAgo() {
+            const diff = Math.max(0, Date.now() - lastMs);
+            const min  = Math.floor(diff / 60000);
+            const h    = Math.floor(min / 60);
+            const m    = min % 60;
+            if (min < 1)       el.textContent = 'adesso';
+            else if (h < 1)    el.textContent = min + 'min fa';
+            else if (m === 0)  el.textContent = h + 'h fa';
+            else               el.textContent = h + 'h ' + m + 'min fa';
+        }
+        updateAgo();
+        setInterval(updateAgo, 60000);
+    })();
+
     // car SVGs are generated per group in buildBars() using f1Car(g.color)
 
     buildBars();
