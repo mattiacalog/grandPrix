@@ -1029,7 +1029,7 @@ async function init() {
         const el = document.getElementById('last-update-ago');
         if (!el || !snapshots.length) return;
         const lastDate = snapshots[snapshots.length - 1].date; // "YYYY-MM-DDTHH:MM"
-        const lastMs = new Date(lastDate.length === 10 ? lastDate + 'T00:00' : lastDate).getTime();
+        const lastMs = new Date((lastDate.length === 10 ? lastDate + 'T00:00' : lastDate) + 'Z').getTime();
         function updateAgo() {
             const diff = Math.max(0, Date.now() - lastMs);
             const min  = Math.floor(diff / 60000);
