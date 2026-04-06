@@ -288,6 +288,7 @@ body {
     font-weight: 700;
     color: var(--text);
     text-align: right;
+    white-space: nowrap;
 }
 
 /* ─── NEXT UPDATE ─── */
@@ -304,10 +305,11 @@ body {
     font-family: 'Orbitron', sans-serif;
     font-size: clamp(.62rem, 1.6vw, .78rem);
     font-weight: 700;
-    color: #E8002D;
+    color: #b5001f;
     text-align: right;
     font-variant-numeric: tabular-nums;
     letter-spacing: .05em;
+    white-space: nowrap;
 }
 
 /* ─── HERO STRIP ─── */

@@ -750,7 +750,9 @@ function render(index) {
     });
 
     initialRender = false;
-    document.getElementById('current-date').textContent = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
+    const _nd = new Date();
+    const _months = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+    document.getElementById('current-date').textContent = String(_nd.getDate()).padStart(2,'0') + ' ' + _months[_nd.getMonth()] + ' ' + _nd.getFullYear();
     document.getElementById('timeline').value = index;
     updateChartLine(index);
     updateTicker(snap, sorted, counts, index);
