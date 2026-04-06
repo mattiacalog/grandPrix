@@ -306,6 +306,8 @@ body {
     font-weight: 700;
     color: #E8002D;
     text-align: right;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .05em;
     animation: next-blink 1.2s step-start infinite;
 }
 @keyframes next-blink {
