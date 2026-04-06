@@ -308,11 +308,6 @@ body {
     text-align: right;
     font-variant-numeric: tabular-nums;
     letter-spacing: .05em;
-    animation: next-blink 1.2s step-start infinite;
-}
-@keyframes next-blink {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0.25; }
 }
 
 /* ─── HERO STRIP ─── */

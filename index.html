@@ -517,6 +517,8 @@
     var el = document.getElementById('next-update-time');
     if (!el) return;
 
+    var blinkOn = true;
+
     function nextSlot() {
         var now = new Date();
         var utcH = now.getUTCHours();
@@ -537,6 +539,8 @@
         var mm   = Math.floor((diff % 3600000) / 60000);
         var ss   = Math.floor((diff % 60000) / 1000);
         el.textContent = pad(hh) + ':' + pad(mm) + ':' + pad(ss);
+        el.style.opacity = blinkOn ? '1' : '0.15';
+        blinkOn = !blinkOn;
     }
 
     tick();
