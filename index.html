@@ -61,6 +61,10 @@
                     <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
                 </svg>
             </button>
+            <div id="next-update-box">
+                <div class="date-label">Next update</div>
+                <div class="next-update-value" id="next-update-time"></div>
+            </div>
             <div>
                 <div class="date-label">Data</div>
                 <div class="date-value" id="current-date"></div>
@@ -506,6 +510,37 @@
         });
     }
 
+})();
+
+// ── NEXT UPDATE COUNTDOWN ────────────────────────────────────────────────────
+(function () {
+    var el = document.getElementById('next-update-time');
+    if (!el) return;
+
+    function nextSlot() {
+        var now = new Date();
+        var utcH = now.getUTCHours();
+        var nextH = Math.ceil((utcH + (now.getUTCMinutes() > 0 || now.getUTCSeconds() > 0 ? 1 : 0)) / 3) * 3;
+        var next = new Date(now);
+        next.setUTCHours(nextH % 24, 0, 0, 0);
+        if (nextH >= 24) next.setUTCDate(next.getUTCDate() + 1);
+        return next;
+    }
+
+    function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+    function tick() {
+        var now  = new Date();
+        var slot = nextSlot();
+        var diff = Math.max(0, slot - now);
+        var hh   = Math.floor(diff / 3600000);
+        var mm   = Math.floor((diff % 3600000) / 60000);
+        var ss   = Math.floor((diff % 60000) / 1000);
+        el.textContent = pad(hh) + ':' + pad(mm) + ':' + pad(ss);
+    }
+
+    tick();
+    setInterval(tick, 1000);
 })();
 </script>
 </body>
