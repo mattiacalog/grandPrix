@@ -294,14 +294,17 @@ body {
 #next-update-box {
     text-align: right;
 }
+#next-update-box .date-label {
+    white-space: nowrap;
+}
 #next-update-box .date-label::before {
-    display: none; /* niente pallino rosso, ha già il suo blink */
+    display: none;
 }
 .next-update-value {
     font-family: 'Orbitron', sans-serif;
-    font-size: clamp(.78rem, 2vw, .95rem);
+    font-size: clamp(.62rem, 1.6vw, .78rem);
     font-weight: 700;
-    color: var(--accent);
+    color: #E8002D;
     text-align: right;
     animation: next-blink 1.2s step-start infinite;
 }
