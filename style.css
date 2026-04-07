@@ -1973,6 +1973,8 @@ body.is-playing .play-btn {
     gap: 6px;
     margin-top: 10px;
     justify-content: center;
+    flex-wrap: nowrap;
+    white-space: nowrap;
 }
 .milestone-days-val {
     font-family: 'Orbitron', sans-serif;

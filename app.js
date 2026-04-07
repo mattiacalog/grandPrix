@@ -226,7 +226,9 @@ function renderMilestone() {
     const prevTarget = target - 10000;
     const pct = Math.min(96, Math.max(2, (ourVal - prevTarget) / 10000 * 100));
 
-    document.getElementById('milestone-target').textContent = fmt(target) + ' membri';
+    const goalLbl = document.getElementById('milestone-goal-label');
+    if (goalLbl) goalLbl.textContent = fmt(target);
+    document.getElementById('milestone-target').textContent = fmt(target);
     document.getElementById('milestone-days').textContent   = days !== null ? days : '∞';
 
     // animazione: appare, poi sposta casco + abbassa visiera
