@@ -224,17 +224,19 @@ function renderMilestone() {
     const days = ourAvg > 0 ? Math.ceil(gap / ourAvg) : null;
 
     const prevTarget = target - 10000;
-    const pct = Math.round(Math.min(100, Math.max(0, (ourVal - prevTarget) / 10000 * 100)));
+    const pct = Math.min(96, Math.max(2, (ourVal - prevTarget) / 10000 * 100));
 
-    document.getElementById('milestone-target').textContent = fmt(target);
+    document.getElementById('milestone-target').textContent = fmt(target) + ' membri';
     document.getElementById('milestone-days').textContent   = days !== null ? days : '∞';
-    const fill = document.getElementById('milestone-progress-fill');
-    if (fill) fill.style.width = pct + '%';
 
-    // animazione: appare + visiera si abbassa
+    // animazione: appare, poi sposta casco + abbassa visiera
     requestAnimationFrame(() => {
         panel.classList.add('visible');
-        setTimeout(() => panel.classList.add('visor-down'), 500);
+        setTimeout(() => {
+            const pin = document.getElementById('milestone-helmet-pin');
+            if (pin) pin.style.left = pct + '%';
+            panel.classList.add('visor-down');
+        }, 500);
     });
 }
 
