@@ -197,6 +197,42 @@ function countOvertakes(groupId, from, to) {
 
 // ─── HERO STRIP ──────────────────────────────────────────────────────────────
 
+// ─── MILESTONE PANEL ─────────────────────────────────────────────────────────
+
+function renderMilestone() {
+    const panel = document.getElementById('milestone-panel');
+    if (!panel) return;
+
+    const to = latestSnap();
+    if (!to) return;
+
+    const ourVal = to.data[OUR_ID] || 0;
+
+    // prossimo obiettivo: prossimo multiplo di 10000
+    const target = Math.ceil((ourVal + 1) / 10000) * 10000;
+
+    // media giornaliera (stessa logica battle forecast — ultimi 30g, escludi oggi parziale)
+    const todayStr  = snapDateStr(to.date);
+    let toForAvg = to;
+    for (let i = snapshots.length - 1; i >= 0; i--) {
+        if (snapDateStr(snapshots[i].date) !== todayStr) { toForAvg = snapshots[i]; break; }
+    }
+    const from30 = getSnapshotBefore(30);
+    const ourAvg = from30 ? (absGrowth(OUR_ID, from30, toForAvg) / Math.max(1, daysBetween(from30, toForAvg))) : 0;
+
+    const gap  = target - ourVal;
+    const days = ourAvg > 0 ? Math.ceil(gap / ourAvg) : null;
+
+    document.getElementById('milestone-target').textContent = fmt(target);
+    document.getElementById('milestone-days').textContent   = days !== null ? days : '∞';
+
+    // animazione: appare + visiera si abbassa
+    requestAnimationFrame(() => {
+        panel.classList.add('visible');
+        setTimeout(() => panel.classList.add('visor-down'), 400);
+    });
+}
+
 // ─── BATTLE FORECAST ─────────────────────────────────────────────────────────
 
 function renderBattleForecast() {
@@ -1206,6 +1242,7 @@ async function init() {
     renderHeroStats();
     renderOvertakePanel();
     renderBattleForecast();
+    renderMilestone();
     setChartMode(false);
     setYRange(true);
 
