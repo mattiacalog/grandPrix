@@ -1951,21 +1951,20 @@ body.is-playing .play-btn {
     left: 0%;
     transform: translateX(-50%);
     bottom: 4px;
-    filter: drop-shadow(0 0 6px rgba(232,0,45,.6));
+    filter: drop-shadow(0 0 8px rgba(232,0,45,.5));
     transition: left 1s cubic-bezier(.4,0,.2,1);
+}
+.milestone-helmet-img {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    display: block;
 }
 .milestone-flag {
     position: absolute;
     right: 0;
     font-size: 1.3rem;
     line-height: 1;
-}
-.m-visor {
-    clip-path: inset(0 0 100% 0);
-    transition: clip-path .6s cubic-bezier(.4,0,.2,1);
-}
-.milestone-panel.visor-down .m-visor {
-    clip-path: inset(0 0 0% 0);
 }
 .milestone-prediction {
     display: flex;
