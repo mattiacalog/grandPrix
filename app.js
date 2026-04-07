@@ -223,13 +223,18 @@ function renderMilestone() {
     const gap  = target - ourVal;
     const days = ourAvg > 0 ? Math.ceil(gap / ourAvg) : null;
 
+    const prevTarget = target - 10000;
+    const pct = Math.round(Math.min(100, Math.max(0, (ourVal - prevTarget) / 10000 * 100)));
+
     document.getElementById('milestone-target').textContent = fmt(target);
     document.getElementById('milestone-days').textContent   = days !== null ? days : '∞';
+    const fill = document.getElementById('milestone-progress-fill');
+    if (fill) fill.style.width = pct + '%';
 
     // animazione: appare + visiera si abbassa
     requestAnimationFrame(() => {
         panel.classList.add('visible');
-        setTimeout(() => panel.classList.add('visor-down'), 400);
+        setTimeout(() => panel.classList.add('visor-down'), 500);
     });
 }
 

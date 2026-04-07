@@ -214,26 +214,46 @@
     </div>
 
     <!-- MILESTONE PANEL -->
-    <div class="milestone-panel" id="milestone-panel">
-        <div class="milestone-helmet-icon">
-            <svg viewBox="0 0 40 44" xmlns="http://www.w3.org/2000/svg" width="36" height="40">
-                <!-- shell -->
-                <path d="M4 26 Q3 10 20 6 Q37 10 36 26 L36 34 Q36 38 32 38 L8 38 Q4 38 4 34Z" fill="#1e1e1e"/>
-                <!-- visor slot (fixed, dark) -->
-                <rect x="7" y="22" width="26" height="10" rx="3" fill="#111"/>
-                <!-- visor (animated via CSS clip) -->
-                <rect class="m-visor" x="7" y="22" width="26" height="10" rx="3" fill="#b5001f"/>
-                <!-- shine -->
-                <rect x="9" y="24" width="10" height="2" rx="1" fill="rgba(255,255,255,0.12)"/>
-                <!-- chin bar -->
-                <rect x="7" y="34" width="26" height="4" rx="2" fill="#2a2a2a"/>
-            </svg>
+    <div class="battle-forecast milestone-panel" id="milestone-panel">
+        <div class="bf-header">
+            <span class="bf-title">MEMBERS PREDICTION</span>
+            <span class="bf-powered">powered by <strong>30d avg</strong></span>
         </div>
-        <div class="milestone-text">
-            <span class="milestone-target" id="milestone-target">30.000</span>
-            <span class="milestone-sep">membri tra</span>
-            <span class="milestone-days" id="milestone-days">—</span>
-            <span class="milestone-sep">giorni</span>
+        <div class="bf-body milestone-body">
+            <!-- Casco -->
+            <div class="bf-side bf-side-us milestone-helmet-side">
+                <svg class="milestone-helmet-svg" viewBox="0 0 60 66" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 38 Q5 14 30 8 Q55 14 54 38 L54 52 Q54 58 48 58 L12 58 Q6 58 6 52Z" fill="#1e1e1e"/>
+                    <rect x="10" y="32" width="40" height="16" rx="5" fill="#111"/>
+                    <rect class="m-visor" x="10" y="32" width="40" height="16" rx="5" fill="#b5001f"/>
+                    <rect x="13" y="35" width="16" height="3" rx="1.5" fill="rgba(255,255,255,0.1)"/>
+                    <rect x="10" y="50" width="40" height="8" rx="3" fill="#2a2a2a"/>
+                </svg>
+            </div>
+            <!-- Centro -->
+            <div class="bf-center">
+                <div class="bf-verdict">
+                    <div class="bf-verdict-lbl">PROSSIMO TRAGUARDO</div>
+                    <div class="bf-verdict-val">
+                        <span id="milestone-target" style="font-size:1.5rem;">—</span>
+                        <span class="bf-verdict-unit">MEMBRI</span>
+                    </div>
+                </div>
+                <div class="bf-difficulty">
+                    <div class="bf-diff-bar">
+                        <div class="bf-diff-fill milestone-progress" id="milestone-progress-fill"></div>
+                    </div>
+                    <div class="bf-diff-lbl">PROGRESSO VERSO L'OBIETTIVO</div>
+                </div>
+            </div>
+            <!-- Giorni -->
+            <div class="bf-side bf-side-them milestone-days-side">
+                <div class="bf-stat-lbl" style="font-size:.52rem;letter-spacing:.15em;">TRA</div>
+                <div class="bf-verdict-val" style="justify-content:flex-end;">
+                    <span id="milestone-days" class="milestone-days-val">—</span>
+                </div>
+                <div class="bf-stat-lbl" style="font-size:.52rem;letter-spacing:.15em;">GIORNI</div>
+            </div>
         </div>
     </div>
 
