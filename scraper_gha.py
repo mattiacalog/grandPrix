@@ -246,7 +246,8 @@ def scrape():
     driver = make_driver()
     load_cookies(driver)
 
-    now     = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M")
+    tz_rome = datetime.timezone(datetime.timedelta(hours=2))  # CEST (ora legale)
+    now     = datetime.datetime.now(tz_rome).strftime("%Y-%m-%dT%H:%M")
     today   = datetime.date.today().strftime("%Y-%m-%d")
     results = {}
 
