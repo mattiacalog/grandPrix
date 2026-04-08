@@ -1156,9 +1156,13 @@ async function init() {
     document.getElementById('chart-mode-abs').addEventListener('click', () => setChartMode(false));
 
     function filterChartByDays(days) {
-        const latest = parseDate(snapshots[snapshots.length - 1].date);
-        const cutoff = days === 0 ? null : new Date(latest.getTime() - days * 86400000);
-        const raw = cutoff ? snapshots.filter(s => parseDate(s.date) >= cutoff) : snapshots;
+        const latestStr = snapDateStr(snapshots[snapshots.length - 1].date);
+        const [ly2, lm2, ld2] = latestStr.split('-').map(Number);
+        const cutoffDay = days === 0 ? null : new Date(ly2, lm2-1, ld2 - days);
+        const raw = cutoffDay ? snapshots.filter(s => {
+            const [y,m,d] = snapDateStr(s.date).split('-').map(Number);
+            return new Date(y,m-1,d) >= cutoffDay;
+        }) : snapshots;
         // Deduplica per giorno: un punto per giorno (ultimo snapshot del giorno)
         const byDay2 = {};
         for (const s of raw) { byDay2[snapDateStr(s.date)] = s; }
