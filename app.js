@@ -29,7 +29,7 @@ let initialRender = true;
 // ─── UTILS ───────────────────────────────────────────────────────────────────
 const fmt     = n  => Math.round(n).toLocaleString('it-IT');
 const fmtSign = n  => n === null || n === undefined ? '--' : (n >= 0 ? `+${fmt(n)}` : fmt(n));
-const fmtPct  = n  => n === null ? '--' : `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
+const fmtPct  = n  => n === null ? '--' : `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
 const fmtAvg  = n  => n === null ? '--' : `${fmtSign(Math.round(n))}/g`;
 
 function parseDate(str) {
