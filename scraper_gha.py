@@ -43,6 +43,7 @@ GROUPS = [
     {"id": "municipiov",           "url": "https://www.facebook.com/groups/1936436096583782"},
     {"id": "ciampino",             "url": "https://www.facebook.com/groups/230107133820164"},
     {"id": "monterotondo",         "url": "https://www.facebook.com/groups/791135487688782"},
+    {"id": "romaedintorni",        "url": "https://www.facebook.com/groups/1913930882790803"},
 ]
 
 def parse_membri(text):
