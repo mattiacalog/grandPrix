@@ -13,6 +13,11 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Pull latest
+        run: git pull --rebase origin main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -48,8 +53,5 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git stash
-          git pull --rebase origin main
-          git stash pop
           git add data/data.json
           git diff --staged --quiet && echo "Nessuna modifica." || (git commit -m "data: snapshot" && git push origin main)
