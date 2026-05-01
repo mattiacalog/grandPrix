@@ -109,7 +109,16 @@ function getSnapshotBefore(daysAgo) {
 
 function absGrowth(groupId, from, to) {
     if (!from || !to) return null;
-    return (to.data[groupId] || 0) - (from.data[groupId] || 0);
+    // Se il valore "from" è mancante, cerca il precedente snapshot valido
+    let fromVal = from.data[groupId] || 0;
+    if (!fromVal) {
+        const fromIdx = snapshots.indexOf(from);
+        for (let i = fromIdx - 1; i >= 0; i--) {
+            const v = snapshots[i].data[groupId];
+            if (v) { fromVal = v; break; }
+        }
+    }
+    return (to.data[groupId] || 0) - fromVal;
 }
 
 function pctGrowth(groupId, from, to) {
